@@ -40,14 +40,14 @@ import {
   Video,
   Music,
   Brain,
-  Save
+  Save,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { PRELOADED_LESSONS } from "./data/preloadedLessons";
 import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
 import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
-import VideoLab from "./components/VideoLab";
-import SoundStudio from "./components/SoundStudio";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
 
 // Vector Robot Bunny Mascot SVG
@@ -130,7 +130,108 @@ export default function App() {
   const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"slides" | "video" | "sound-studio" | "lab" | "worksheet" | "quiz" | "media">("slides");
+  const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
+
+  // Dyslexia & Neurodiverse Assistive states
+  const [dyslexiaMode, setDyslexiaMode] = useState<boolean>(false);
+  const [antiGlare, setAntiGlare] = useState<"none" | "cream" | "mint" | "peach">("none");
+  const [readingRuler, setReadingRuler] = useState<boolean>(false);
+  const [bionicReading, setBionicReading] = useState<boolean>(false);
+  const [ttsSpeed, setTtsSpeed] = useState<number>(0.9);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+
+  // Text-To-Speech Audio Reader Engine
+  const speakText = (text: string, speed: number = 0.9) => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    // Clean phonetic spelling bracket annotations so they aren't read aloud literally
+    const cleanText = text.replace(/\[[^\]]*\]/g, "");
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = speed;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  // Stop TTS reader when active tab changes
+  useEffect(() => {
+    stopSpeaking();
+  }, [activeTab]);
+
+  // Clean up speech synthesis on component unmount
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  // Bionic Reading conversion formatter
+  const formatBionicText = (text: string) => {
+    if (!text) return "";
+    const words = text.split(/\s+/);
+    return words.map((word, wIdx) => {
+      if (!word) return null;
+      
+      // If it is a phonetic bracket guide e.g. [frik-shun], render it simply without bionic formatting
+      if (word.startsWith("[") || word.endsWith("]")) {
+        return (
+          <span key={wIdx} className="inline-block mr-1 text-teal-500 font-mono text-xs select-none">
+            {word}{" "}
+          </span>
+        );
+      }
+
+      const match = word.match(/^([^a-zA-Z0-9]*)([a-zA-Z0-9]+)([^a-zA-Z0-9]*)$/);
+      if (!match) return <span key={wIdx}>{word} </span>;
+      
+      const prefix = match[1];
+      const coreWord = match[2];
+      const suffix = match[3];
+
+      if (coreWord.length <= 1) {
+        return <span key={wIdx}>{word} </span>;
+      }
+
+      const boldLen = Math.ceil(coreWord.length * 0.4) || 1;
+      const boldPart = coreWord.substring(0, boldLen);
+      const restPart = coreWord.substring(boldLen);
+
+      const isLightBg = antiGlare !== "none";
+      const boldColorClass = isLightBg 
+        ? "font-extrabold text-teal-950 text-shadow-sm" 
+        : "font-extrabold text-amber-300";
+
+      return (
+        <span key={wIdx} className="inline-block mr-1">
+          {prefix}
+          <strong className={boldColorClass}>{boldPart}</strong>
+          <span>{restPart}</span>
+          {suffix}
+        </span>
+      );
+    });
+  };
+
+  // Quiz ruler focus states
+  const quizRulerRef = React.useRef<HTMLDivElement>(null);
+  const [quizRulerTop, setQuizRulerTop] = useState(120);
+
+  const handleQuizMouseMove = (e: React.MouseEvent) => {
+    if (!readingRuler || !quizRulerRef.current) return;
+    const rect = quizRulerRef.current.getBoundingClientRect();
+    const relativeY = e.clientY - rect.top;
+    const clampedY = Math.max(10, Math.min(rect.height - 10, relativeY));
+    setQuizRulerTop(clampedY);
+  };
   
   // Interactive Quiz states
   const [currentQuizIndex, setCurrentQuizIndex] = useState<number>(0);
@@ -325,9 +426,7 @@ export default function App() {
         }
       }
 
-      const goalDirective = transformationGoal === "gamify" 
-        ? "Objective: Gamify this lesson. Emphasize active gamification, gamified team-building exercises, interactive smart quizzes, and kid-friendly hands-on classroom experiments. Make it highly engaging, playful, and extremely interactive." 
-        : "Objective: Create Presentation. Focus on building highly visual, conceptual slides with comprehensive step-by-step teaching guidelines, analogies, clear explanations, and structured classroom lecture summaries.";
+      const goalDirective = "Objective: Gamify this lesson specifically optimized for differently-abled and dyslexic students. Emphasize multi-sensory and game-based learning, scannable short bullet points, bracketed phonetic spellings for key scientific words, active hands-on classroom physical activities, and interactive group jeopardy-style smart quizzes.";
 
       const response = await fetch("/api/process-lesson", {
         method: "POST",
@@ -610,6 +709,8 @@ export default function App() {
     setShowExplanation(false);
   };
 
+  const isLightBackground = antiGlare !== "none";
+
   return (
     <div className="min-h-screen bg-surface-0 text-primary flex flex-col antialiased">
       {/* Centered column wrapper matching the layout width */}
@@ -703,49 +804,27 @@ export default function App() {
               </span>
             </div>
 
-            {/* Selection of transformation goal with high fidelity toggle buttons */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-teal-dark block font-sans">Pedagogical Goal Option:</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setTransformationGoal("gamify")}
-                  className={`p-3.5 rounded-xl text-left border transition-all flex items-start gap-3 cursor-pointer ${
-                    transformationGoal === "gamify"
-                      ? "border-teal-brand bg-teal-light/20 text-teal-dark shadow-3xs"
-                      : "border-black/[0.08] hover:border-black/[0.18] text-secondary hover:text-primary"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                    transformationGoal === "gamify" ? "bg-teal-brand border-teal-brand text-white" : "border-black/[0.15] bg-white"
-                  }`}>
-                    {transformationGoal === "gamify" && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold font-sans">Gamify Lesson Plan</p>
-                    <p className="text-[10px] text-secondary leading-normal font-sans">Inserts competitive trivia, student led roles, and hands-on laboratory games.</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTransformationGoal("presentation")}
-                  className={`p-3.5 rounded-xl text-left border transition-all flex items-start gap-3 cursor-pointer ${
-                    transformationGoal === "presentation"
-                      ? "border-teal-brand bg-teal-light/20 text-teal-dark shadow-3xs"
-                      : "border-black/[0.08] hover:border-black/[0.18] text-secondary hover:text-primary"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                    transformationGoal === "presentation" ? "bg-teal-brand border-teal-brand text-white" : "border-black/[0.15] bg-white"
-                  }`}>
-                    {transformationGoal === "presentation" && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold font-sans">Create Highly Visual Presentation</p>
-                    <p className="text-[10px] text-secondary leading-normal font-sans">Focuses on comprehensive slides, teaching analogies, and deep topic guides.</p>
-                  </div>
-                </button>
+            {/* Selection of transformation goal is locked to Gamify for Accessibility */}
+            <div className="space-y-2 text-left animate-fade-in">
+              <label className="text-xs font-bold text-teal-dark block font-sans flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-teal-brand animate-pulse" />
+                <span>Pedagogical Mode (Dyslexia & Accessibility Active):</span>
+              </label>
+              <div className="p-4.5 rounded-2xl border border-teal-brand/35 bg-teal-light/25 flex gap-3.5 items-start">
+                <div className="w-9 h-9 rounded-full bg-teal-brand text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-teal-dark font-sans flex items-center gap-1.5">
+                    <span>Gamify Lesson (Neurodiverse & Dyslexia Optimized)</span>
+                    <span className="text-[8px] uppercase tracking-wider bg-teal-600 text-white font-mono font-bold px-1.5 py-0.5 rounded">
+                      Locked Active
+                    </span>
+                  </p>
+                  <p className="text-[10px] text-secondary leading-relaxed font-sans">
+                    This mode is permanently active to maximize cognitive accessibility. It transforms dry lesson plans into dynamic smartboard slide decks with bracketed phonetic aids (e.g. <em>friction [FRIK-shun]</em>) and structures interactive classroom jeopardy trivia. This delivers multi-sensory and game-based learning.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1177,35 +1256,132 @@ export default function App() {
               </div>
             </div>
 
-            {/* Horizontal Resource Pills Tabs */}
-            <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl mb-6 font-sans">
-              {[
-                { id: "slides", label: "Interactive Slides", icon: Layers },
-                { id: "video", label: "Video Lab (Veo)", icon: Video },
-                { id: "sound-studio", label: "Sound Studio (Lyria)", icon: Music },
-                { id: "lab", label: "Hands-On Lab", icon: Activity },
-                { id: "worksheet", label: "Printable Worksheet", icon: FileText },
-                { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
-                { id: "media", label: "Media Fixer", icon: Link2Off }
-              ].map((tab) => {
-                const TabIcon = tab.icon;
-                const isSelected = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                      isSelected
-                        ? "bg-teal-dark text-white shadow-3xs"
-                        : "text-secondary hover:text-primary hover:bg-white/[0.6]"
-                    }`}
-                    id={`tab-${tab.id}`}
+            {/* Horizontal Resource Pills Tabs and Dyslexia Assistive Toolkit */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-black/[0.06] pb-5 mb-6" id="assistive-toolkit-bar">
+              <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl font-sans shrink-0 max-w-fit">
+                {[
+                  { id: "slides", label: "Interactive Slides", icon: Layers },
+                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle }
+                ].map((tab) => {
+                  const TabIcon = tab.icon;
+                  const isSelected = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                        isSelected
+                          ? "bg-teal-dark text-white shadow-3xs"
+                          : "text-secondary hover:text-primary hover:bg-white/[0.6]"
+                      }`}
+                      id={`tab-${tab.id}`}
+                    >
+                      <TabIcon className={`w-4 h-4 ${isSelected ? "text-teal-brand" : "text-secondary"}`} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Dyslexia & Assistive Reading Controls Panel */}
+              <div className="flex flex-wrap items-center gap-2 bg-teal-brand/10 border border-teal-brand/15 p-2 rounded-2xl">
+                <div className="flex items-center gap-1.5 px-2 select-none border-r border-teal-brand/20 mr-1 shrink-0">
+                  <Brain className="w-4 h-4 text-teal-brand animate-pulse" />
+                  <span className="text-[10px] font-bold text-teal-dark font-sans">Dyslexia Toolkit:</span>
+                </div>
+                
+                {/* Dyslexia Friendly Font Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setDyslexiaMode(!dyslexiaMode)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                    dyslexiaMode
+                      ? "bg-teal-brand text-white shadow-3xs"
+                      : "bg-white hover:bg-surface-0 text-secondary border border-black/[0.06]"
+                  }`}
+                  title="Switch to heavy-bottom dyslexia-friendly font"
+                >
+                  Abc (Font)
+                </button>
+
+                {/* Bionic Reading Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setBionicReading(!bionicReading)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                    bionicReading
+                      ? "bg-teal-brand text-white shadow-3xs"
+                      : "bg-white hover:bg-surface-0 text-secondary border border-black/[0.06]"
+                  }`}
+                  title="Bold first parts of words to guide visual flow"
+                >
+                  Bio (Reading)
+                </button>
+
+                {/* Focus Ruler Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setReadingRuler(!readingRuler)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                    readingRuler
+                      ? "bg-teal-brand text-white shadow-3xs"
+                      : "bg-white hover:bg-surface-0 text-secondary border border-black/[0.06]"
+                  }`}
+                  title="Enable movable horizontal reading guide ruler"
+                >
+                  Focus Ruler
+                </button>
+
+                {/* Anti-Glare Overlay Selector */}
+                <div className="flex items-center gap-1 bg-white border border-black/[0.06] p-1 rounded-xl">
+                  <span className="text-[9px] font-bold text-secondary px-1.5 select-none font-sans">Anti-Glare:</span>
+                  {(["none", "cream", "mint", "peach"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setAntiGlare(mode)}
+                      className={`w-5 h-5 rounded-full border transition-all cursor-pointer ${
+                        antiGlare === mode 
+                          ? "border-teal-brand scale-110 shadow-3xs" 
+                          : "border-black/[0.1] hover:scale-105"
+                      }`}
+                      style={{
+                        backgroundColor: 
+                          mode === "none" ? "#334155" : 
+                          mode === "cream" ? "#FAF3E3" : 
+                          mode === "mint" ? "#E6F4F1" : "#FAF0E6"
+                      }}
+                      title={`Anti-glare: ${mode === "none" ? "Dark Theme" : mode}`}
+                    />
+                  ))}
+                </div>
+
+                {/* TTS Reader Speech Speed controller */}
+                <div className="flex items-center gap-1 bg-white border border-black/[0.06] px-2 py-1 rounded-xl shrink-0">
+                  <span className="text-[9px] font-bold text-secondary font-sans select-none">TTS Speed:</span>
+                  <select
+                    value={ttsSpeed}
+                    onChange={(e) => setTtsSpeed(parseFloat(e.target.value))}
+                    className="text-[9px] font-bold text-teal-dark bg-transparent border-none outline-none focus:ring-0 cursor-pointer"
                   >
-                    <TabIcon className={`w-4 h-4 ${isSelected ? "text-teal-brand" : "text-secondary"}`} />
-                    <span>{tab.label}</span>
+                    <option value="0.7">0.7x (Slow)</option>
+                    <option value="0.9">0.9x (Normal)</option>
+                    <option value="1.1">1.1x (Fast)</option>
+                  </select>
+                </div>
+
+                {/* Global Speech Stop Button if speaking */}
+                {isSpeaking && (
+                  <button
+                    type="button"
+                    onClick={stopSpeaking}
+                    className="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-all animate-pulse cursor-pointer shrink-0"
+                    title="Stop text-to-speech reader"
+                  >
+                    <VolumeX className="w-3.5 h-3.5" />
                   </button>
-                );
-              })}
+                )}
+              </div>
             </div>
 
             {/* Resource Stage Canvas */}
@@ -1222,10 +1398,29 @@ export default function App() {
                     transition={{ duration: 0.25 }}
                     className="space-y-6 animate-fade-in"
                   >
-                    <InteractiveSlideshow slides={lesson.slides} />
+                    <InteractiveSlideshow 
+                      slides={lesson.slides} 
+                      dyslexiaMode={dyslexiaMode}
+                      antiGlare={antiGlare}
+                      readingRuler={readingRuler}
+                      bionicReading={bionicReading}
+                      ttsSpeed={ttsSpeed}
+                      speakText={speakText}
+                      stopSpeaking={stopSpeaking}
+                      isSpeaking={isSpeaking}
+                      formatBionicText={formatBionicText}
+                    />
 
                     {/* Scientific learning pillars */}
-                    <div className="bg-surface-0/60 border border-black/[0.06] rounded-2xl p-5 space-y-4">
+                    <div className={`border rounded-2xl p-5 space-y-4 transition-all duration-300 ${
+                      isLightBackground 
+                        ? antiGlare === "cream"
+                          ? "bg-[#FAF3E3]/40 border-[#E8DCC4]"
+                          : antiGlare === "mint"
+                            ? "bg-[#E6F4F1]/40 border-[#C8E4DD]"
+                            : "bg-[#FAF0E6]/40 border-[#E6D5C3]"
+                        : "bg-surface-0/60 border border-black/[0.06]"
+                    }`}>
                       <div className="flex items-center gap-2.5 border-b border-black/[0.05] pb-3">
                         <div className="w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-brand border border-teal-brand/10">
                           <CheckCircle2 className="w-4.5 h-4.5" />
@@ -1238,11 +1433,20 @@ export default function App() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         {lesson.keyTakeaways.map((takeaway, idx) => (
-                          <div key={idx} className="flex gap-2.5 items-start p-3 bg-white rounded-xl border border-black/[0.04]">
+                          <div 
+                            key={idx} 
+                            className={`flex gap-2.5 items-start p-3 rounded-xl border transition-all duration-300 ${
+                              isLightBackground
+                                ? "bg-white border-black/[0.04]"
+                                : "bg-white border border-black/[0.04]"
+                            }`}
+                          >
                             <span className="w-5 h-5 rounded-full bg-teal-light flex items-center justify-center shrink-0 text-teal-brand font-bold text-[10px] mt-0.5">
                               {idx + 1}
                             </span>
-                            <span className="text-xs text-secondary leading-relaxed font-sans font-medium">{takeaway}</span>
+                            <span className={`text-xs leading-relaxed ${dyslexiaMode ? "dyslexia-mode-styles text-slate-800" : "font-sans font-medium text-secondary"}`}>
+                              {bionicReading ? formatBionicText(takeaway) : takeaway}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -1250,244 +1454,8 @@ export default function App() {
                   </motion.div>
                 )}
 
-                {/* TAB: Video Lab (Veo) */}
-                {activeTab === "video" && (
-                  <motion.div
-                    key="tab-video-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-6 animate-fade-in"
-                  >
-                    <VideoLab 
-                      lesson={lesson} 
-                      onTriggerPaidFlow={() => {
-                        console.log("Triggering Paid Model flow via AI Studio build...");
-                        alert("Paid API Key selection dialog opened in your AI Studio build console. Please verify the active model settings.");
-                      }} 
-                    />
-                  </motion.div>
-                )}
 
-                {/* TAB: Sound Studio (Lyria) */}
-                {activeTab === "sound-studio" && (
-                  <motion.div
-                    key="tab-sound-studio-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-6 animate-fade-in"
-                  >
-                    <SoundStudio 
-                      lesson={lesson} 
-                      onTriggerPaidFlow={() => {
-                        console.log("Triggering Paid Model flow via AI Studio build...");
-                        alert("Paid API Key selection dialog opened in your AI Studio build console. Please verify the active model settings.");
-                      }} 
-                    />
-                  </motion.div>
-                )}
 
-                {/* TAB 2: Hands-On Lab */}
-                {activeTab === "lab" && (
-                  <motion.div
-                    key="tab-lab-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-fade-in"
-                  >
-                    {/* Left Checklist panel */}
-                    <div className="md:col-span-5 bg-surface-0/40 border border-black/[0.06] rounded-2xl p-5 space-y-4">
-                      <div className="border-b border-black/[0.05] pb-3">
-                        <span className="text-[9px] font-mono font-bold text-secondary uppercase tracking-wider block">PRE-CLASS LOGISTICS</span>
-                        <h4 className="text-sm font-bold text-teal-dark font-sans">Lab Bin Materials</h4>
-                      </div>
-
-                      <div className="space-y-2">
-                        {lesson.handsOnActivity.materials.map((material, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => toggleMaterial(material)}
-                            className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                              checkedMaterials[material]
-                                ? "bg-teal-light/20 border-teal-brand/30 text-teal-dark"
-                                : "bg-white border-black/[0.05] text-secondary hover:bg-surface-0"
-                            }`}
-                          >
-                            <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center transition-all ${
-                              checkedMaterials[material]
-                                ? "bg-teal-brand border-teal-brand text-white"
-                                : "border-black/[0.15] bg-white"
-                            }`}>
-                              {checkedMaterials[material] && <Check className="w-3.5 h-3.5 stroke-[3.5]" />}
-                            </div>
-                            <span className="text-xs font-sans font-medium leading-tight">{material}</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="p-3 bg-teal-light/20 border border-teal-brand/10 rounded-xl text-[10px] text-teal-dark leading-relaxed font-sans flex gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-teal-brand shrink-0 mt-0.5" />
-                        <div>
-                          <strong>Check bins off</strong> to streamline pre-class preparation. Designed for simple classroom storage management.
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right experimental protocol panel */}
-                    <div className="md:col-span-7 space-y-4">
-                      <div className="bg-white border border-black/[0.08] rounded-2xl p-5.5 space-y-5">
-                        <div className="flex justify-between items-start border-b border-black/[0.05] pb-3">
-                          <div className="space-y-0.5">
-                            <span className="text-[9px] font-mono font-bold text-secondary uppercase">Step-by-step Experiment</span>
-                            <h4 className="text-base font-bold text-primary font-sans">{lesson.handsOnActivity.title}</h4>
-                          </div>
-                          <span className="px-2.5 py-0.5 bg-teal-dark text-white text-[9px] font-mono font-bold rounded-lg uppercase">
-                            STUDENT LED
-                          </span>
-                        </div>
-
-                        {/* Steps List */}
-                        <div className="space-y-4">
-                          {lesson.handsOnActivity.steps.map((step, idx) => (
-                            <div key={idx} className="flex gap-3.5 items-start">
-                              <span className="w-6 h-6 rounded-lg bg-surface-1 border border-black/[0.05] flex items-center justify-center text-xs font-bold text-secondary shrink-0 mt-0.5">
-                                {idx + 1}
-                              </span>
-                              <p className="text-xs text-secondary leading-relaxed font-sans pt-0.5 font-normal">
-                                {step}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Scientific Principle display box */}
-                      <div className="bg-teal-dark text-white rounded-2xl p-5.5 space-y-2.5 relative overflow-hidden shadow-xs">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-brand/10 rounded-full blur-xl pointer-events-none" />
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-teal-brand" />
-                          <h5 className="text-[10px] font-mono font-bold uppercase tracking-wider text-teal-light">The Scientific Catalyst Behind the Lab</h5>
-                        </div>
-                        <p className="text-xs text-teal-light/95 leading-relaxed font-sans">
-                          {lesson.handsOnActivity.scientificPrinciple}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* TAB 3: Printable Worksheet */}
-                {activeTab === "worksheet" && (
-                  <motion.div
-                    key="tab-worksheet-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-4 animate-fade-in"
-                  >
-                    {/* Simulated paper sheet block */}
-                    <div className="bg-white border border-black/[0.12] rounded-2xl p-6 sm:p-8 shadow-3xs space-y-6 relative overflow-hidden" id="worksheet-to-print">
-                      
-                      {/* Name/Date lines */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-dashed border-black/[0.1] pb-5">
-                        <div className="space-y-1">
-                          <h3 className="font-serif text-lg font-bold text-teal-dark">{lesson.worksheet.title}</h3>
-                          <p className="text-xs text-secondary font-sans leading-relaxed">{lesson.worksheet.instructions}</p>
-                        </div>
-                        
-                        <div className="flex gap-4 text-[10px] font-mono text-secondary shrink-0 w-full sm:w-auto">
-                          <div className="border-b border-black/[0.15] flex-1 sm:flex-initial sm:w-36 pb-1">
-                            <span>NAME: </span>
-                          </div>
-                          <div className="border-b border-black/[0.15] w-24 pb-1">
-                            <span>DATE: </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Question list */}
-                      <div className="space-y-6 py-2">
-                        {lesson.worksheet.questions.map((question, idx) => (
-                          <div key={question.id} className="space-y-3">
-                            <div className="flex items-start gap-2.5">
-                              <span className="font-mono font-bold text-teal-dark bg-teal-light border border-teal-brand/10 px-2.5 py-0.5 rounded-md text-[10px] mt-0.5 shrink-0">
-                                {question.id}
-                              </span>
-                              <span className="text-xs sm:text-sm font-bold text-primary leading-snug">
-                                {question.questionText}
-                              </span>
-                              <span className="text-[9px] font-mono text-secondary bg-surface-1 border border-black/[0.04] px-2 py-0.5 rounded ml-auto shrink-0 select-none">
-                                {question.answerType}
-                              </span>
-                            </div>
-
-                            {/* MC Choices if present */}
-                            {question.options && question.options.length > 0 ? (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-9">
-                                {question.options.map((option, optIdx) => (
-                                  <div key={optIdx} className="flex items-center gap-2.5 p-2 bg-surface-0/60 border border-black/[0.04] rounded-xl text-xs text-secondary font-sans">
-                                    <div className="w-4 h-4 rounded-full border border-black/[0.15] bg-white shrink-0" />
-                                    <span>{option}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              /* Lined box for long-form responses */
-                              <div className="pl-9 space-y-2">
-                                <div className="h-6 border-b border-black/[0.06]" />
-                                <div className="h-6 border-b border-black/[0.06]" />
-                              </div>
-                            )}
-
-                            {/* Instructor key overlay */}
-                            {showSampleAnswers && (
-                              <div className="mt-2.5 ml-9 p-3 bg-teal-light/20 border border-teal-brand/10 rounded-xl text-xs text-teal-dark flex gap-2">
-                                <span className="font-bold font-mono uppercase text-teal-brand select-none">Instructor Key:</span>
-                                <p className="font-sans font-medium">{question.sampleAnswer}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Print PDF Actions Footer */}
-                      <div className="border-t border-black/[0.05] pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <span className="text-[9px] font-mono text-secondary">Ages 6-14 · Resources generated via Lyra</span>
-                        <div className="flex gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setShowSampleAnswers(!showSampleAnswers)}
-                            className={`flex items-center gap-1.5 px-3.5 py-2 border rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                              showSampleAnswers
-                                ? "bg-teal-light/30 border-teal-brand/20 text-teal-brand"
-                                : "bg-white border-black/[0.08] text-secondary hover:bg-surface-0"
-                            }`}
-                            id="toggle-answers-btn"
-                          >
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>{showSampleAnswers ? "Hide Answer Key" : "Show Answer Key"}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => window.print()}
-                            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-dark hover:bg-opacity-95 text-white border border-teal-dark rounded-xl text-xs font-bold transition-all shadow-3xs cursor-pointer"
-                            id="print-worksheet-btn"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Print PDF Worksheet</span>
-                          </button>
-                        </div>
-                      </div>
-
-                    </div>
-                  </motion.div>
-                )}
 
                 {/* TAB 4: Jeopardy Game Quiz */}
                 {activeTab === "quiz" && (
@@ -1499,21 +1467,52 @@ export default function App() {
                     transition={{ duration: 0.25 }}
                     className="space-y-4 animate-fade-in"
                   >
-                    <div className="bg-teal-dark text-white border border-teal-brand/10 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col justify-between min-h-[420px] relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-80 h-80 bg-teal-brand/5 rounded-full blur-3xl pointer-events-none" />
-                      <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold-brand/5 rounded-full blur-3xl pointer-events-none" />
+                    <div 
+                      ref={quizRulerRef}
+                      onMouseMove={handleQuizMouseMove}
+                      className={`relative overflow-hidden border rounded-3xl shadow-lg min-h-[420px] flex flex-col justify-between p-6 sm:p-8 transition-all duration-300 ${
+                        isLightBackground 
+                          ? antiGlare === "cream"
+                            ? "bg-[#FAF3E3] border-[#E8DCC4] text-[#433422]"
+                            : antiGlare === "mint"
+                              ? "bg-[#E6F4F1] border-[#C8E4DD] text-[#133835]"
+                              : "bg-[#FAF0E6] border-[#E6D5C3] text-[#4A2E1B]"
+                          : "bg-teal-dark text-white border-teal-brand/10"
+                      }`}
+                    >
+                      {/* Anti-glare and dyslexia focus guide rulers */}
+                      {readingRuler && (
+                        <div 
+                          className={`absolute left-0 right-0 h-11 pointer-events-none transition-all duration-75 z-30 border-y ${
+                            isLightBackground 
+                              ? "bg-amber-400/25 border-amber-500/40 mix-blend-multiply" 
+                              : "bg-white/10 border-white/20 mix-blend-screen"
+                          }`}
+                          style={{ top: `${quizRulerTop - 22}px` }}
+                        />
+                      )}
 
                       {/* Header */}
-                      <div className="flex justify-between items-center border-b border-white/[0.08] pb-4 mb-4 z-10">
+                      <div className={`flex justify-between items-center border-b pb-4 mb-4 z-10 ${isLightBackground ? "border-black/5" : "border-white/[0.08]"}`}>
                         <div>
-                          <span className="text-[9px] font-mono font-bold text-teal-brand uppercase tracking-widest block">CLASSROOM JEOPARDY STANDARD</span>
-                          <h4 className="text-sm font-bold text-teal-light font-sans">Smart Board Group Quiz</h4>
+                          <span className={`text-[9px] font-mono font-bold uppercase tracking-widest block ${isLightBackground ? "text-teal-800" : "text-teal-brand"}`}>
+                            CLASSROOM JEOPARDY STANDARD
+                          </span>
+                          <h4 className={`text-sm font-bold font-sans ${isLightBackground ? "text-teal-950" : "text-teal-light"}`}>
+                            Smart Board Group Quiz
+                          </h4>
                         </div>
                         <div className="flex items-center gap-3.5">
-                          <span className="text-xs font-mono text-teal-light">Score: <strong className="text-teal-brand">{quizScore}</strong> / {lesson.quiz.length}</span>
+                          <span className={`text-xs font-mono ${isLightBackground ? "text-[#5a4c3a]" : "text-teal-light"}`}>
+                            Score: <strong className="text-teal-brand">{quizScore}</strong> / {lesson.quiz.length}
+                          </span>
                           <button
                             onClick={handleResetQuiz}
-                            className="text-[10px] font-mono text-teal-light hover:text-white border border-white/[0.12] hover:border-white/[0.22] px-2.5 py-1 rounded-lg transition-all"
+                            className={`text-[10px] font-mono border px-2.5 py-1 rounded-lg transition-all ${
+                              isLightBackground 
+                                ? "border-black/10 text-[#433422] hover:bg-black/5" 
+                                : "border-white/[0.12] text-teal-light hover:text-white hover:border-white/[0.22]"
+                            }`}
                           >
                             Reset
                           </button>
@@ -1525,11 +1524,13 @@ export default function App() {
                         {quizCompleted ? (
                           /* Finish Screen */
                           <div className="text-center space-y-4 max-w-sm mx-auto py-8">
-                            <div className="w-16 h-16 rounded-full bg-teal-brand/10 border border-teal-brand/30 flex items-center justify-center text-teal-brand mx-auto shadow-sm">
+                            <div className="w-16 h-16 rounded-full bg-teal-brand/10 border border-teal-brand/30 flex items-center justify-center text-teal-brand mx-auto shadow-sm animate-bounce">
                               <Award className="w-8 h-8" />
                             </div>
-                            <h4 className="text-xl font-serif font-bold text-white">Outstanding, Team!</h4>
-                            <p className="text-xs text-teal-light/80 leading-relaxed font-sans">
+                            <h4 className={`text-xl font-bold ${isLightBackground ? "text-teal-950" : "text-white"}`}>
+                              Outstanding, Team!
+                            </h4>
+                            <p className={`text-xs leading-relaxed font-sans ${isLightBackground ? "text-[#5a4c3a]" : "text-teal-light/80"}`}>
                               Your classroom finished the interactive module. You scored <strong>{quizScore} out of {lesson.quiz.length}</strong> correct answers!
                             </p>
                             <div className="pt-2">
@@ -1544,11 +1545,24 @@ export default function App() {
                         ) : (
                           /* Question Block */
                           <div className="space-y-6">
-                            <div className="space-y-1.5">
-                              <span className="text-[10px] font-mono font-bold text-teal-brand uppercase">Question {currentQuizIndex + 1} of {lesson.quiz.length}</span>
-                              <h4 className="text-base sm:text-lg font-bold tracking-tight text-white leading-relaxed font-sans">
-                                {lesson.quiz[currentQuizIndex].question}
-                              </h4>
+                            <div className="space-y-2">
+                              <span className={`text-[10px] font-mono font-bold uppercase ${isLightBackground ? "text-teal-800" : "text-teal-brand"}`}>
+                                Question {currentQuizIndex + 1} of {lesson.quiz.length}
+                              </span>
+                              
+                              <div className="flex justify-between items-start gap-4">
+                                <h4 className={`text-base sm:text-lg font-bold tracking-tight leading-relaxed ${isLightBackground ? "text-slate-900" : "text-white"} ${dyslexiaMode ? "dyslexia-mode-styles" : "font-sans"}`}>
+                                  {bionicReading ? formatBionicText(lesson.quiz[currentQuizIndex].question) : lesson.quiz[currentQuizIndex].question}
+                                </h4>
+                                <button
+                                  type="button"
+                                  onClick={() => speakText(lesson.quiz[currentQuizIndex].question, ttsSpeed)}
+                                  className={`p-1.5 rounded-lg transition-all ${isLightBackground ? "hover:bg-teal-950/10 text-teal-950 animate-pulse" : "hover:bg-white/10 text-teal-400"}`}
+                                  title="Speak question aloud"
+                                >
+                                  <Volume2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Option list */}
@@ -1557,46 +1571,71 @@ export default function App() {
                                 const isSelected = selectedQuizOption === idx;
                                 const isCorrectAnswer = idx === lesson.quiz[currentQuizIndex].correctAnswerIndex;
                                 
-                                let borderClass = "border-white/[0.08] hover:border-white/[0.18] bg-black/[0.15]";
-                                let textClass = "text-teal-light";
+                                let borderClass = isLightBackground
+                                  ? "border-black/5 hover:border-black/20 bg-black/5"
+                                  : "border-white/[0.08] hover:border-white/[0.18] bg-black/[0.15]";
+                                let textClass = isLightBackground ? "text-slate-800" : "text-teal-light";
                                 let statusIcon = null;
 
                                 if (selectedQuizOption !== null) {
                                   if (isCorrectAnswer) {
                                     borderClass = "border-teal-brand bg-teal-brand/20";
-                                    textClass = "text-white font-bold";
-                                    statusIcon = <Check className="w-4 h-4 text-teal-brand" />;
+                                    textClass = isLightBackground ? "text-teal-950 font-bold" : "text-white font-bold";
+                                    statusIcon = <Check className="w-4 h-4 text-teal-brand shrink-0" />;
                                   } else if (isSelected) {
                                     borderClass = "border-red-500 bg-red-950/20";
-                                    textClass = "text-red-200";
-                                    statusIcon = <X className="w-4 h-4 text-red-500" />;
+                                    textClass = "text-red-600 dark:text-red-200";
+                                    statusIcon = <X className="w-4 h-4 text-red-500 shrink-0" />;
                                   } else {
                                     borderClass = "border-white/[0.04] bg-transparent opacity-35";
                                   }
                                 }
 
                                 return (
-                                  <button
+                                  <div
                                     key={idx}
-                                    onClick={() => handleQuizOptionClick(idx)}
-                                    disabled={selectedQuizOption !== null}
-                                    className={`p-4 rounded-xl border text-left text-xs sm:text-sm transition-all flex items-center justify-between gap-3 cursor-pointer ${borderClass}`}
+                                    className={`p-3 sm:p-4 rounded-xl border text-left text-xs sm:text-sm transition-all flex items-center justify-between gap-3 cursor-pointer group ${borderClass}`}
+                                    onClick={() => {
+                                      if (selectedQuizOption === null) {
+                                        handleQuizOptionClick(idx);
+                                      }
+                                    }}
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-6 h-6 rounded-lg bg-black/[0.25] border border-white/[0.08] text-teal-light flex items-center justify-center text-[10px] font-mono font-bold shrink-0">
+                                    <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                                      <div className={`w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                                        isLightBackground 
+                                          ? "bg-white border-black/10 text-teal-dark" 
+                                          : "bg-black/[0.25] border-white/[0.08] text-teal-light"
+                                      }`}>
                                         {String.fromCharCode(65 + idx)}
                                       </div>
-                                      <span className={`${textClass} font-sans`}>{option}</span>
+                                      <span className={`leading-relaxed truncate ${textClass} ${dyslexiaMode ? "dyslexia-mode-styles" : "font-sans"}`}>
+                                        {bionicReading ? formatBionicText(option) : option}
+                                      </span>
                                     </div>
-                                    {statusIcon}
-                                  </button>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {/* Speak single option button */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          speakText(`Option ${String.fromCharCode(65 + idx)}: ${option}`, ttsSpeed);
+                                        }}
+                                        className={`p-1 rounded opacity-40 group-hover:opacity-100 transition-all ${isLightBackground ? "hover:bg-black/5 text-slate-800" : "hover:bg-white/10 text-teal-400"}`}
+                                        title="Speak option text"
+                                      >
+                                        <Volume2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      {statusIcon}
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>
 
                             {/* Detailed explanation overlay */}
                             {showExplanation && (
-                              <div className="bg-black/[0.2] border border-white/[0.06] rounded-xl p-4 text-xs text-teal-light/90 leading-relaxed font-sans">
+                              <div className={`border rounded-xl p-4 text-xs leading-relaxed font-sans ${isLightBackground ? "bg-black/5 border-black/5 text-slate-800" : "bg-black/[0.2] border-white/[0.06] text-teal-light/90"}`}>
                                 <span className="font-bold text-teal-brand block mb-1">🎯 Instructor Insight:</span>
                                 {lesson.quiz[currentQuizIndex].explanation}
                               </div>
@@ -1607,13 +1646,17 @@ export default function App() {
 
                       {/* Controls Footer */}
                       {!quizCompleted && (
-                        <div className="border-t border-white/[0.08] pt-4 flex justify-between items-center z-10">
+                        <div className={`border-t pt-4 flex justify-between items-center z-10 ${isLightBackground ? "border-black/5" : "border-white/[0.08]"}`}>
                           <span className="text-[9px] text-teal-brand uppercase tracking-wider font-mono">Team Interactive Mode</span>
                           
                           <button
                             onClick={handleNextQuiz}
                             disabled={selectedQuizOption === null}
-                            className="px-4.5 py-2.5 bg-white text-teal-dark text-xs font-bold rounded-xl hover:bg-teal-light transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            className={`px-4.5 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                              isLightBackground 
+                                ? "bg-teal-dark hover:bg-opacity-90 text-white" 
+                                : "bg-white text-teal-dark hover:bg-teal-light"
+                            }`}
                           >
                             <span>{currentQuizIndex === lesson.quiz.length - 1 ? "End Module" : "Next Question"}</span>
                             <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1625,74 +1668,6 @@ export default function App() {
                   </motion.div>
                 )}
 
-                {/* TAB 5: Broken Media Link Fixer */}
-                {activeTab === "media" && (
-                  <motion.div
-                    key="tab-media-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-4 animate-fade-in"
-                  >
-                    <div className="bg-white border border-black/[0.08] rounded-2xl p-5 shadow-3xs flex flex-col sm:flex-row items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shrink-0">
-                        <Link2Off className="w-5.5 h-5.5" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <h4 className="text-xs font-bold text-teal-dark uppercase font-sans">Prevent "404 Broken Link" Disruption</h4>
-                        <p className="text-xs text-secondary leading-relaxed font-sans font-normal">
-                          Afterschool STEM lessons are notorious for carrying outdated links or broken intranet URLs. 
-                          <strong> Lyra</strong> detects these dead ends and suggests high-yield fallback searches.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {lesson.mediaRecommendations.map((rec, idx) => (
-                        <div key={idx} className="bg-surface-0/50 border border-black/[0.06] rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-teal-brand/30 transition-all">
-                          <div className="space-y-3">
-                            <span className="px-2.5 py-0.5 bg-red-50 border border-red-100 text-[9px] font-bold text-red-800 rounded-full inline-block font-sans uppercase">
-                              Replaces Dead {rec.resourceType}
-                            </span>
-                            
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-secondary font-sans font-bold uppercase block">Verified YouTube Search Query:</span>
-                              <div className="bg-white border border-black/[0.06] p-3 rounded-xl flex items-center justify-between gap-3 text-teal-dark">
-                                <span className="text-xs font-mono font-bold truncate">{rec.suggestedSearchQuery}</span>
-                                <button
-                                  onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(rec.suggestedSearchQuery)}`, "_blank")}
-                                  className="p-1.5 hover:bg-teal-light rounded-lg text-teal-brand transition-all shrink-0"
-                                  title="YouTube search"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="pt-1">
-                              <span className="text-[10px] text-secondary font-sans font-bold uppercase block mb-0.5">Pedagogical Value:</span>
-                              <p className="text-xs text-secondary leading-relaxed font-sans font-normal">
-                                {rec.whyItHelps}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-black/[0.04] flex justify-between items-center text-[10px] text-secondary font-sans">
-                            <span>Ready-to-use Backup</span>
-                            <button
-                              onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(rec.suggestedSearchQuery)}`, "_blank")}
-                              className="text-teal-brand hover:underline font-bold flex items-center gap-0.5"
-                            >
-                              <span>Google Search</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
 
               </AnimatePresence>
             </div>

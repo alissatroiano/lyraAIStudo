@@ -72,3 +72,14 @@
     display: none !important;
   }
 }
+
+/* Dyslexia-friendly custom typography standards */
+.dyslexia-mode-styles {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.22em !important;
+  line-height: 1.95 !important;
+  text-shadow: 0.3px 0.3px 0px rgba(0,0,0,0.06) !important;
+}
+
