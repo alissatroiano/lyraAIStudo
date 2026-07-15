@@ -4,14 +4,32 @@ import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 // @ts-ignore
-import pdfParse from "pdf-parse";
-// @ts-ignore
 import mammoth from "mammoth";
+import Stripe from "stripe";
+
+// @ts-ignore
+import * as pdfParseNamespace from "pdf-parse";
+// @ts-ignore
+const pdfParse = pdfParseNamespace.default || pdfParseNamespace;
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+// Initialize Stripe Client lazily
+let stripeClient: Stripe | null = null;
+function getStripeClient(): Stripe | null {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) {
+      stripeClient = new Stripe(key, {
+        apiVersion: "2023-10-16" as any,
+      });
+    }
+  }
+  return stripeClient;
+}
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -394,6 +412,41 @@ app.post("/api/video-download", async (req, res) => {
     console.error("Video download failed:", error);
     res.status(500).json({
       error: "Failed to download generated video.",
+      details: error?.message || String(error)
+    });
+  }
+});
+
+// API endpoint to create a Stripe payment intent
+app.post("/api/create-payment-intent", async (req, res) => {
+  const { amount, currency } = req.body;
+
+  const stripe = getStripeClient();
+  if (!stripe) {
+    console.warn("STRIPE_SECRET_KEY environment variable is not defined. Simulating checkout with a mock client secret.");
+    return res.json({
+      clientSecret: "mock_secret_" + Math.random().toString(36).substring(2, 15),
+      isMock: true
+    });
+  }
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount || 2900, // Default to $29.00
+      currency: currency || "usd",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      isMock: false
+    });
+  } catch (error: any) {
+    console.error("Failed to create Stripe payment intent:", error);
+    res.status(500).json({
+      error: "Failed to create payment intent.",
       details: error?.message || String(error)
     });
   }

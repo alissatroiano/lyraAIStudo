@@ -15,7 +15,8 @@ import {
   getDocs, 
   deleteDoc,
   serverTimestamp,
-  orderBy
+  orderBy,
+  onSnapshot
 } from 'firebase/firestore';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 import { ProcessedLesson } from '../types';
@@ -89,43 +90,56 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Sync user profile state & create profile doc if needed
+  // Sync user profile state & create profile doc if needed in real-time
   useEffect(() => {
+    let profileUnsubscribe: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setAuthLoading(true);
       
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+        profileUnsubscribe = null;
+      }
+
       if (currentUser) {
         const userDocPath = `users/${currentUser.uid}`;
-        try {
-          // Check if profile exists
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          const docSnap = await getDoc(userDocRef);
-          
-          if (!docSnap.exists()) {
-            // Profile must be verified if the email verification rule is active.
-            // Let's force an email verified claim or handle gracefully.
-            // Note: In development/preview environments, google logins are verified.
-            const newProfile = {
-              uid: currentUser.uid,
-              email: currentUser.email || '',
-              displayName: currentUser.displayName || 'Educator',
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            };
-            await setDoc(userDocRef, newProfile);
-            setProfile(newProfile);
-          } else {
-            setProfile(docSnap.data());
+        const userDocRef = doc(db, 'users', currentUser.uid);
+
+        // Listen to user profile document in real-time
+        profileUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+          try {
+            if (!docSnap.exists()) {
+              const newProfile = {
+                uid: currentUser.uid,
+                email: currentUser.email || '',
+                displayName: currentUser.displayName || 'Educator',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              };
+              await setDoc(userDocRef, newProfile);
+              setProfile(newProfile);
+            } else {
+              setProfile(docSnap.data());
+            }
+            setAuthLoading(false);
+          } catch (err: any) {
+            console.error("Error setting/getting user profile in listener:", err);
+            handleFirestoreError(err, OperationType.GET, userDocPath);
+            setAuthLoading(false);
           }
-          
-          // Load lessons once verified
-          setAuthLoading(false);
-          await loadLessons();
-        } catch (err: any) {
-          console.error("Error loading user profile from Firestore:", err);
+        }, (err) => {
+          console.error("onSnapshot error for user profile:", err);
           handleFirestoreError(err, OperationType.GET, userDocPath);
           setAuthLoading(false);
+        });
+
+        // Load lessons once verified
+        try {
+          await loadLessons();
+        } catch (e) {
+          console.error("Failed to load lessons:", e);
         }
       } else {
         setProfile(null);
@@ -134,7 +148,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (profileUnsubscribe) profileUnsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {

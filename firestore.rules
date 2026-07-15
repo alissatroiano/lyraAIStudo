@@ -45,6 +45,9 @@ service cloud.firestore {
         && (!data.keys().hasAny(['duration']) || (data.duration is string))
         && (!data.keys().hasAny(['tech']) || (data.tech is string))
         && (!data.keys().hasAny(['instructorNotes']) || (data.instructorNotes is string))
+        && (!data.keys().hasAny(['isSubscribed']) || (data.isSubscribed is bool))
+        && (!data.keys().hasAny(['stripeCustomerId']) || (data.stripeCustomerId is string && data.stripeCustomerId.size() <= 128))
+        && (!data.keys().hasAny(['stripeSubscriptionId']) || (data.stripeSubscriptionId is string && data.stripeSubscriptionId.size() <= 128))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -83,7 +86,7 @@ service cloud.firestore {
         && incoming().uid == request.auth.uid
         && incoming().createdAt == existing().createdAt
         && (incoming().updatedAt == request.time || incoming().updatedAt is timestamp)
-        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt', 'customPreferences', 'grade', 'classSize', 'duration', 'tech', 'instructorNotes']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt', 'customPreferences', 'grade', 'classSize', 'duration', 'tech', 'instructorNotes', 'isSubscribed', 'stripeCustomerId', 'stripeSubscriptionId']);
         
       allow delete: if false; // Profiles are permanent once created
     }

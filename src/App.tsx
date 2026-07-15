@@ -49,6 +49,12 @@ import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
 import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import { LandingPage } from "./components/LandingPage";
+import { SubscriptionWall } from "./components/SubscriptionWall";
+
+const stripePromise = loadStripe("pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW");
 
 // Vector Robot Bunny Mascot SVG
 const RobotBunnyMascot = ({ className = "w-28 h-28" }: { className?: string }) => (
@@ -96,8 +102,10 @@ export default function App() {
     saveLessonToCloud, 
     deleteLessonFromCloud, 
     saveInstructorPreferences,
+    loadLessons,
     authLoading, 
-    dbLoading 
+    dbLoading,
+    error: authError
   } = useFirebase();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -139,6 +147,57 @@ export default function App() {
   const [bionicReading, setBionicReading] = useState<boolean>(false);
   const [ttsSpeed, setTtsSpeed] = useState<number>(0.9);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>("");
+
+  // Load and sort browser voices for TTS, prioritizing friendly ones
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+
+    const getVoiceFriendlinessScore = (name: string): number => {
+      const lower = name.toLowerCase();
+      if (lower.includes("natural")) return 100;
+      if (lower.includes("google")) return 90;
+      if (lower.includes("samantha")) return 80;
+      if (lower.includes("hazel")) return 70;
+      if (lower.includes("zira")) return 60;
+      if (lower.includes("david")) return 50;
+      if (lower.includes("female")) return 40;
+      return 0;
+    };
+
+    const updateVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      // Filter English or friendly-sounding voices
+      let filtered = allVoices.filter(v => v.lang.toLowerCase().startsWith("en"));
+      if (filtered.length === 0) {
+        filtered = allVoices;
+      }
+
+      // Sort to prioritize friendly voices
+      const sorted = [...filtered].sort((a, b) => {
+        const scoreA = getVoiceFriendlinessScore(a.name);
+        const scoreB = getVoiceFriendlinessScore(b.name);
+        return scoreB - scoreA; // Descending friendliness
+      });
+
+      setVoices(sorted);
+
+      if (sorted.length > 0) {
+        setSelectedVoiceURI(prev => {
+          if (prev && sorted.some(v => v.voiceURI === prev)) {
+            return prev;
+          }
+          return sorted[0].voiceURI;
+        });
+      }
+    };
+
+    updateVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+  }, []);
 
   // Text-To-Speech Audio Reader Engine
   const speakText = (text: string, speed: number = 0.9) => {
@@ -148,7 +207,22 @@ export default function App() {
     const cleanText = text.replace(/\[[^\]]*\]/g, "");
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = speed;
-    utterance.pitch = 1.0;
+    
+    // Find the voice by selectedVoiceURI
+    const allVoices = window.speechSynthesis.getVoices();
+    const voice = allVoices.find(v => v.voiceURI === selectedVoiceURI);
+    if (voice) {
+      utterance.voice = voice;
+      // Adjust pitch slightly for certain voices for extra friendliness
+      if (voice.name.toLowerCase().includes("google") || voice.name.toLowerCase().includes("natural")) {
+        utterance.pitch = 1.05;
+      } else {
+        utterance.pitch = 1.0;
+      }
+    } else {
+      utterance.pitch = 1.0;
+    }
+    
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
@@ -711,10 +785,60 @@ export default function App() {
 
   const isLightBackground = antiGlare !== "none";
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#f4f6fb] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-10 h-10 border-4 border-teal-brand border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold text-teal-dark font-sans">Verifying Educator Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <LandingPage signInWithGoogle={signInWithGoogle} authLoading={authLoading} authError={authError} />
+    );
+  }
+
+  const isSubscribed = profile?.isSubscribed === true;
+  if (!isSubscribed) {
+    return (
+      <div className="min-h-screen bg-[#f4f6fb] text-[#0f1117] flex flex-col font-sans antialiased">
+        <div className="w-full max-w-[1300px] mx-auto bg-white min-h-screen shadow-md flex flex-col pb-16">
+          <nav className="px-6 py-4.5 border-b border-black/[0.09] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center shrink-0 border border-teal-brand/30">
+                <Sparkles className="w-5 h-5 text-teal-brand" />
+              </div>
+              <div>
+                <span className="font-serif text-2xl font-semibold tracking-tight text-teal-dark">
+                  Lyra<span className="text-teal-brand font-sans">.</span>
+                </span>
+                <p className="text-[10px] text-secondary font-sans tracking-wide leading-none">Afterschool STEM Copilot</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={logOut}
+              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-full text-xs font-bold transition-all flex items-center gap-1 cursor-pointer font-sans"
+            >
+              Sign Out
+            </button>
+          </nav>
+          <Elements stripe={stripePromise}>
+            <SubscriptionWall user={user} onSuccess={loadLessons} />
+          </Elements>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface-0 text-primary flex flex-col antialiased">
       {/* Centered column wrapper matching the layout width */}
-      <div className="w-full max-w-[840px] mx-auto bg-white min-h-screen shadow-xs border-x border-slate-200/60 flex flex-col pb-16">
+      <div className="w-full max-w-[1300px] mx-auto bg-white min-h-screen shadow-md flex flex-col pb-16">
         
         {/* Navigation Bar (ly-nav) */}
         <nav className="px-6 py-4.5 border-b border-black/[0.09] flex items-center justify-between gap-4">
@@ -1369,6 +1493,34 @@ export default function App() {
                     <option value="1.1">1.1x (Fast)</option>
                   </select>
                 </div>
+
+                {/* TTS Friendly Voice Persona selector */}
+                {voices.length > 0 && (
+                  <div className="flex items-center gap-1 bg-white border border-black/[0.06] px-2 py-1 rounded-xl shrink-0">
+                    <span className="text-[9px] font-bold text-secondary font-sans select-none">Voice:</span>
+                    <select
+                      value={selectedVoiceURI}
+                      onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                      className="text-[9px] font-bold text-teal-dark bg-transparent border-none outline-none focus:ring-0 cursor-pointer max-w-[125px] truncate"
+                    >
+                      {voices.map((v) => {
+                        let displayName = v.name;
+                        // Make Microsoft and Google labels look clean & compact
+                        if (displayName.includes("Microsoft")) {
+                          displayName = displayName.replace("Microsoft", "MS").replace("Desktop", "");
+                        }
+                        if (displayName.includes("Google")) {
+                          displayName = displayName.replace("Google", "Goog");
+                        }
+                        return (
+                          <option key={v.voiceURI} value={v.voiceURI} title={v.name}>
+                            {displayName}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
 
                 {/* Global Speech Stop Button if speaking */}
                 {isSpeaking && (
