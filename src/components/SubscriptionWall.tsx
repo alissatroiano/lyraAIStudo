@@ -22,7 +22,7 @@ export const SubscriptionWall: React.FC<SubscriptionWallProps> = ({ user, onSucc
     pro: {
       id: "pro",
       name: "STEM Educator Pro",
-      price: "$29",
+      price: "$19.99",
       period: "month",
       desc: "Perfect for individual teachers, tutors, and classroom instructors seeking the ultimate STEM copilot.",
       features: [
@@ -36,7 +36,7 @@ export const SubscriptionWall: React.FC<SubscriptionWallProps> = ({ user, onSucc
     camp: {
       id: "camp",
       name: "STEM Camp Director",
-      price: "$95",
+      price: "$49.99",
       period: "month",
       desc: "Built for summer camps, program directors, and schools managing multiple educators and cohorts.",
       features: [
@@ -55,7 +55,7 @@ export const SubscriptionWall: React.FC<SubscriptionWallProps> = ({ user, onSucc
     setLoading(true);
     setError(null);
 
-    const amountInCents = selectedPlan === "pro" ? 2900 : 9500;
+    const amountInCents = selectedPlan === "pro" ? 1999 : 4999;
 
     try {
       // 1. Create payment intent on server

@@ -66,7 +66,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
           <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-[#5a6478]">
             <a href="#how" className="hover:text-[#0f1117] transition-all">How it works</a>
             <a href="#pricing" className="hover:text-[#0f1117] transition-all">Pricing</a>
-            <a href="#launch" className="hover:text-[#0f1117] transition-all">Launch plan</a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -152,62 +151,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
 
             {/* Mascot float wrap on the right */}
             <div className="shrink-0 bg-[#e0faf8]/40 border border-[#00C2B2]/10 rounded-3xl p-6 shadow-md animate-float">
-              {/* Vector Robot Bunny Mascot SVG */}
-              <svg viewBox="0 0 120 120" className="w-40 h-40 sm:w-48 sm:h-48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Ears */}
-                <g transform="translate(0, -4)">
-                  {/* Left Ear */}
-                  <rect x="36" y="8" width="14" height="42" rx="7" fill="#1a4a45" />
-                  <rect x="40" y="14" width="6" height="30" rx="3" fill="#00C2B2" />
-                  {/* Right Ear */}
-                  <rect x="70" y="8" width="14" height="42" rx="7" fill="#1a4a45" />
-                  <rect x="74" y="14" width="6" height="30" rx="3" fill="#00C2B2" />
-                </g>
-                {/* Head / Body */}
-                <rect x="30" y="44" width="60" height="52" rx="20" fill="#1a4a45" stroke="#00C2B2" strokeWidth="2.5" />
-                {/* Face Screen */}
-                <rect x="38" y="52" width="44" height="28" rx="10" fill="#0f1117" stroke="#2ec4b8" strokeWidth="1" />
-                {/* Glowing Eyes */}
-                <circle cx="50" cy="66" r="4.5" fill="#00C2B2" className="animate-pulse" />
-                <circle cx="70" cy="66" r="4.5" fill="#00C2B2" className="animate-pulse" />
-                {/* Cheek blush */}
-                <circle cx="43" cy="72" r="2" fill="#2ec4b8" opacity="0.6" />
-                <circle cx="77" cy="72" r="2" fill="#2ec4b8" opacity="0.6" />
-                {/* Little happy mouth */}
-                <path d="M57 73 Q60 76 63 73" stroke="#00C2B2" strokeWidth="1.5" strokeLinecap="round" />
-                {/* Antenna */}
-                <line x1="60" y1="44" x2="60" y2="34" stroke="#1a4a45" strokeWidth="3" />
-                <circle cx="60" cy="32" r="4.5" fill="#00C2B2" />
-                {/* Collar & Badge */}
-                <path d="M46 96 L60 92 L74 96 L60 101 Z" fill="#C97D10" />
-                {/* Sparkle badge on top right */}
-                <path d="M102 32 L104 38 L110 40 L104 42 L102 48 L100 42 L94 40 L100 38 Z" fill="#00C2B2" />
-                {/* Little yellow star sparkle on left */}
-                <path d="M16 64 L17 68 L21 69 L17 70 L16 74 L15 70 L11 69 L15 68 Z" fill="#C97D10" />
-              </svg>
+              <img 
+                src="/lyra.png" 
+                alt="Lyra Learning Logo" 
+                className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-xl"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.endsWith("/lyra.png")) {
+                    target.src = "/logo.png";
+                  }
+                }}
+              />
             </div>
           </div>
 
-          {/* Interactive Mock Intake Controller */}
-          <div onClick={signInWithGoogle} className="mt-12 bg-white border border-black/[0.12] rounded-2xl p-8 shadow-sm space-y-5 cursor-pointer hover:border-[#00C2B2]/60 transition-all">
-            <div className="flex justify-between items-center border-b border-black/[0.06] pb-3">
-              <span className="text-[10px] font-bold font-mono tracking-wider text-[#00C2B2] uppercase bg-[#e0faf8] px-2.5 py-0.5 rounded-md">
-                1. Upload Curriculum Material (DEMO)
-              </span>
-              <span className="text-xs font-semibold text-[#5a6478] font-sans flex items-center gap-1">
-                🔒 Sign In Required
-              </span>
-            </div>
-            <div className="border-2 border-dashed border-black/[0.12] rounded-xl p-8 text-center flex flex-col items-center justify-center gap-2.5 bg-surface-0/50">
-              <Upload className="w-8 h-8 text-[#00C2B2]" />
-              <p className="text-sm font-bold text-primary font-sans">
-                Drag &amp; drop your lesson plan PDF or Docx here, or click to sign in and unlock
-              </p>
-              <p className="text-xs text-secondary">
-                Transforms dry text into beautiful slideshows, tactile labs, and quizzes instantly
-              </p>
-            </div>
-          </div>
         </header>
 
         {/* Section: Pain points */}
@@ -281,32 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
           </div>
         </section>
 
-        {/* Section: Timeline */}
-        <section className="px-6 sm:px-12 py-12 space-y-6" id="launch">
-          <div className="text-[10px] font-bold tracking-widest text-[#9CA3AF] uppercase font-sans">
-            Our 90-Day Product Roadmap
-          </div>
-          <div className="relative border-l border-black/[0.08] ml-4 pl-6 space-y-8 text-left">
-            <div className="relative">
-              <span className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-[#00C2B2] border-2 border-white shadow-3xs" />
-              <div className="inline-block text-[10px] font-bold px-2 py-0.5 bg-[#e0faf8] text-[#1a4a45] rounded-full mb-1">Days 1 - 30</div>
-              <h4 className="text-xs font-bold text-primary">Core MVP Release</h4>
-              <p className="text-xs text-[#5a6478] leading-relaxed max-w-xl">Finalize basic upload pipeline, clean prompt configuration interface, core slide-generation and real-time Text-To-Speech audio player. Setup Stripe payments.</p>
-            </div>
-            <div className="relative">
-              <span className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-[#00C2B2] border-2 border-white shadow-3xs" />
-              <div className="inline-block text-[10px] font-bold px-2 py-0.5 bg-[#e0faf8] text-[#1a4a45] rounded-full mb-1">Days 31 - 60</div>
-              <h4 className="text-xs font-bold text-primary">Live Classroom Pilot</h4>
-              <p className="text-xs text-[#5a6478] leading-relaxed max-w-xl">Invite 20+ afterschool instructors to run live trials. Establish initial paid cohort licenses. Integrate PDF exporting options directly from the web client.</p>
-            </div>
-            <div className="relative">
-              <span className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-[#00C2B2] border-2 border-white shadow-3xs" />
-              <div className="inline-block text-[10px] font-bold px-2 py-0.5 bg-[#e0faf8] text-[#1a4a45] rounded-full mb-1">Days 61 - 90</div>
-              <h4 className="text-xs font-bold text-primary">Scaling and Admin Suite</h4>
-              <p className="text-xs text-[#5a6478] leading-relaxed max-w-xl">Deliver organization-wide management dashboards, centralized shared curriculum folders, and automatic billing systems. Goal: 10+ paid cohorts and $2,000+ ARR.</p>
-            </div>
-          </div>
-        </section>
+
 
         {/* Section: Pricing */}
         <section className="px-6 sm:px-12 py-12 space-y-6" id="pricing">
@@ -335,7 +268,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
               <div className="space-y-2">
                 <span className="text-xs font-bold text-[#1a4a45]">STEM Educator Pro</span>
                 <div className="flex items-baseline gap-0.5">
-                  <span className="font-serif text-3.5xl font-bold text-primary">$29</span>
+                  <span className="font-serif text-3.5xl font-bold text-primary">$19.99</span>
                   <span className="text-[10px] text-[#5a6478]">/ month</span>
                 </div>
                 <p className="text-[11px] text-[#5a6478] leading-relaxed">Perfect for active afterschool tutors, classroom teachers, and home educators.</p>
@@ -349,7 +282,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
               <div className="space-y-2">
                 <span className="text-xs font-bold text-[#5a6478]">STEM Camp Director</span>
                 <div className="flex items-baseline gap-0.5">
-                  <span className="font-serif text-3.5xl font-bold text-primary">$95</span>
+                  <span className="font-serif text-3.5xl font-bold text-primary">$49.99</span>
                   <span className="text-[10px] text-[#5a6478]">/ month</span>
                 </div>
                 <p className="text-[11px] text-[#5a6478] leading-relaxed">For science camps, learning centers, and school administrators running multiple classrooms.</p>

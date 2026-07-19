@@ -2061,46 +2061,68 @@ export default function App() {
           {/* Pricing Plans (ly-pricing) */}
           <div className="border-t border-black/[0.05] pt-10 space-y-6" id="pricing-section">
             <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-gold-brand uppercase tracking-widest font-sans">PILOT LAUNCH SUBSCRIPTIONS</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">Priced for real afterschool districts</h3>
+              <span className="text-[10px] font-bold text-teal-brand uppercase tracking-widest font-sans">Simple, Transparent Pricing</span>
+              <h3 className="font-serif text-2xl font-bold text-teal-dark">Choose the perfect plan for your classroom</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {/* Plan 1 */}
-              <div className="bg-white border border-black/[0.12] rounded-2xl p-5.5 space-y-4 relative overflow-hidden flex flex-col justify-between">
-                <div className="space-y-1.5">
-                  <span className="text-[9px] font-mono font-bold text-secondary uppercase tracking-widest block bg-surface-1 py-0.5 px-2.5 rounded inline-block">SUMMER PILOT</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$499</span>
-                    <span className="text-xs text-secondary font-sans">/ district</span>
+              <div className="bg-white border border-black/[0.12] rounded-2xl p-6 flex flex-col justify-between text-left space-y-4">
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-secondary">Instructor Demo</span>
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$0</span>
+                    <span className="text-[10px] text-secondary">/ month</span>
                   </div>
-                  <p className="text-[11px] text-secondary leading-relaxed font-sans font-normal">
-                    Up to 5 campuses, 20 active instructors, fully unlimited AI transformations with Firestore saving.
-                  </p>
+                  <p className="text-[11px] text-secondary leading-relaxed">Try Lyra on your own and generate up to 3 full interactive lesson packages.</p>
                 </div>
-                <div className="border-t border-black/[0.04] pt-3 mt-2 flex items-center justify-between text-[10px] text-teal-brand font-bold font-sans">
-                  <span>Enquire for Pilot</span>
-                  <ArrowRight className="w-4 h-4" />
-                </div>
+                <button 
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="w-full py-2 bg-white border border-black/[0.1] hover:bg-surface-0 text-teal-dark rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center"
+                >
+                  {isSubscribed ? "Free Demo Included" : "Try for Free"}
+                </button>
               </div>
 
               {/* Plan 2 */}
-              <div className="bg-teal-dark text-white rounded-2xl p-5.5 space-y-4 relative overflow-hidden flex flex-col justify-between shadow-xs">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-brand/10 rounded-full blur-xl" />
-                <div className="space-y-1.5 relative z-10">
-                  <span className="text-[9px] font-mono font-bold text-teal-brand uppercase tracking-widest block bg-black/[0.15] py-0.5 px-2.5 rounded inline-block">DISTRICT CORE</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-serif text-3.5xl font-bold text-teal-light">$1,299</span>
-                    <span className="text-xs text-teal-light/70 font-sans">/ year</span>
+              <div className="border-2 border-teal-brand bg-teal-light/10 rounded-2xl p-6 flex flex-col justify-between text-left space-y-4 relative transform scale-[1.02]">
+                <span className="absolute top-0 right-4 -translate-y-1/2 bg-teal-brand text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                  Most Popular
+                </span>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-teal-dark">STEM Educator Pro</span>
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$19.99</span>
+                    <span className="text-[10px] text-secondary">/ month</span>
                   </div>
-                  <p className="text-[11px] text-teal-light/80 leading-relaxed font-sans font-normal">
-                    Complete multi-campus sync, custom curriculum templates, standard alignment scoring, and VIP support.
-                  </p>
+                  <p className="text-[11px] text-secondary leading-relaxed">Perfect for active afterschool tutors, classroom teachers, and home educators.</p>
                 </div>
-                <div className="border-t border-white/[0.08] pt-3 mt-2 flex items-center justify-between text-[10px] text-teal-brand font-bold font-sans relative z-10">
-                  <span>Request Full Access</span>
-                  <ArrowRight className="w-4 h-4" />
+                <button 
+                  onClick={() => isSubscribed ? null : setShowUpgradeModal(true)}
+                  className={`w-full py-2 rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center ${
+                    isSubscribed ? "bg-teal-brand/20 text-teal-dark cursor-default" : "bg-teal-dark hover:bg-opacity-95 text-white"
+                  }`}
+                >
+                  {isSubscribed ? "Currently Active" : "Subscribe Now"}
+                </button>
+              </div>
+
+              {/* Plan 3 */}
+              <div className="bg-white border border-black/[0.12] rounded-2xl p-6 flex flex-col justify-between text-left space-y-4">
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-secondary">STEM Camp Director</span>
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$49.99</span>
+                    <span className="text-[10px] text-secondary">/ month</span>
+                  </div>
+                  <p className="text-[11px] text-secondary leading-relaxed">For science camps, learning centers, and school administrators running multiple classrooms.</p>
                 </div>
+                <button 
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full py-2 bg-white border border-black/[0.1] hover:bg-surface-0 text-teal-dark rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center"
+                >
+                  Upgrade Team
+                </button>
               </div>
             </div>
           </div>
