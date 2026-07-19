@@ -112,8 +112,14 @@ export default function App() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [isManuallyEdited, setIsManuallyEdited] = useState<boolean>(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
 
   const handleSaveToCloud = async () => {
+    if (!isSubscribed && savedLessons.length >= 1) {
+      setShowUpgradeModal(true);
+      setError("To save more than 1 lesson plan to the cloud, please upgrade to STEM Educator Pro.");
+      return;
+    }
     try {
       await saveLessonToCloud(lesson);
       setSaveStatus("Saved successfully!");
@@ -405,6 +411,11 @@ export default function App() {
   // Handle uploaded files by reading them as text
   const handleFileUpload = (file: File) => {
     if (!file) return;
+    if (!isSubscribed && savedLessons.length >= 1) {
+      setShowUpgradeModal(true);
+      setError("To generate or upload more than 1 lesson plan, please upgrade to STEM Educator Pro.");
+      return;
+    }
     setUploadedFileName(file.name);
     setExtractionError(null);
 
@@ -482,6 +493,11 @@ export default function App() {
 
   // Call server-side backend API to process lesson using Gemini
   const handleProcessLesson = async () => {
+    if (!isSubscribed && savedLessons.length >= 1) {
+      setShowUpgradeModal(true);
+      setError("To generate more than 1 lesson plan, please upgrade to STEM Educator Pro.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -803,7 +819,8 @@ export default function App() {
   }
 
   const isSubscribed = profile?.isSubscribed === true;
-  if (!isSubscribed) {
+  const hasAccess = isSubscribed || savedLessons.length <= 1;
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-[#f4f6fb] text-[#0f1117] flex flex-col font-sans antialiased">
         <div className="w-full max-w-[1300px] mx-auto bg-white min-h-screen shadow-md flex flex-col pb-16">
@@ -857,6 +874,16 @@ export default function App() {
 
           {/* Nav Links / Active Auth badge */}
           <div className="flex items-center gap-3">
+            {!isSubscribed && user && (
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-4 py-1.5 bg-[#e0faf8] hover:bg-[#bbf7f2] border border-teal-brand/20 text-teal-dark rounded-full text-xs font-bold transition-all flex items-center gap-1 cursor-pointer font-sans shadow-3xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-brand animate-pulse shrink-0" />
+                <span>Upgrade to Pro</span>
+              </button>
+            )}
             {authLoading ? (
               <div className="w-5 h-5 border-2 border-teal-brand border-t-transparent rounded-full animate-spin" />
             ) : user ? (
@@ -961,7 +988,13 @@ export default function App() {
                 onDragOver={handleDrag}
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
-                onClick={() => {
+                onClick={(e) => {
+                  if (!isSubscribed && savedLessons.length >= 1) {
+                    e.stopPropagation();
+                    setShowUpgradeModal(true);
+                    setError("To generate or upload more than 1 lesson plan, please upgrade to STEM Educator Pro.");
+                    return;
+                  }
                   const el = document.getElementById("file-upload-input");
                   if (el) (el as HTMLInputElement).click();
                 }}
@@ -1077,6 +1110,11 @@ export default function App() {
                     key={preload.id}
                     type="button"
                     onClick={() => {
+                      if (!isSubscribed && savedLessons.length >= 1) {
+                        setShowUpgradeModal(true);
+                        setError("To generate or explore more than 1 lesson plan, please upgrade to STEM Educator Pro.");
+                        return;
+                      }
                       setCustomContent(preload.rawContent);
                       setUploadedFileName(`preset_${preload.id}.txt`);
                       handleQuickDemoFill(preload.id);
@@ -1282,6 +1320,25 @@ export default function App() {
                 </div>
                 <span className="text-[9px] font-mono text-secondary uppercase tracking-wider">Loaded from Cloud Firestore</span>
               </div>
+
+              {!isSubscribed && savedLessons.length === 1 && (
+                <div className="bg-amber-50/70 border border-amber-200/50 p-3.5 rounded-xl flex items-center justify-between gap-4 text-xs font-sans">
+                  <div className="flex gap-2 items-start">
+                    <Sparkles className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                    <div>
+                      <p className="font-bold text-amber-900">You are using your 1 free lesson plan</p>
+                      <p className="text-[11px] text-amber-800">Upgrade to STEM Educator Pro for unlimited custom lesson generations and classroom slide decks.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Upgrade Now
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {savedLessons.map((saved) => (
@@ -2031,6 +2088,34 @@ export default function App() {
         </footer>
 
       </div>
+
+      {/* Upgrade to Pro Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto font-sans">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-black/[0.08] animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all cursor-pointer z-10"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="p-2 sm:p-6">
+              <Elements stripe={stripePromise}>
+                <SubscriptionWall 
+                  user={user} 
+                  onSuccess={() => {
+                    loadLessons();
+                    setShowUpgradeModal(false);
+                  }} 
+                />
+              </Elements>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
