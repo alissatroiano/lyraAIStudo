@@ -164,7 +164,7 @@ export default function InteractiveSlideshow({
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
-            <span>{showNotes ? "Hide Teacher Notes" : "Show Teacher Notes"}</span>
+            <span>{showNotes ? "Hide Facilitator Cues" : "Show Facilitator Cues"}</span>
           </button>
 
           <button

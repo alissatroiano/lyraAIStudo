@@ -1397,9 +1397,9 @@ export default function App() {
         {/* Cloud Saved Lessons and Active Workspace Column Stack */}
         <section className="px-6 sm:px-8 py-8 space-y-8 flex-1">
           
-          {/* Saved Lessons (If authenticated & populated) */}
-          {user && savedLessons.length > 0 && (
-            <div className="bg-surface-0 border border-black/[0.06] rounded-2xl p-5 space-y-3.5">
+          {/* Your Saved STEM Lesson Plans */}
+          {user && (
+            <div className="bg-surface-0 border border-black/[0.06] rounded-2xl p-5 space-y-3.5" id="saved-lessons-section">
               <div className="flex justify-between items-center border-b border-black/[0.05] pb-2">
                 <div className="flex items-center gap-2">
                   <Bookmark className="w-4 h-4 text-gold-brand" />
@@ -1408,66 +1408,76 @@ export default function App() {
                 <span className="text-[9px] font-mono text-secondary uppercase tracking-wider">Loaded from Cloud Firestore</span>
               </div>
 
-              {!isSubscribed && savedLessons.length === 1 && (
-                <div className="bg-amber-50/70 border border-amber-200/50 p-3.5 rounded-xl flex items-center justify-between gap-4 text-xs font-sans">
-                  <div className="flex gap-2 items-start">
-                    <Sparkles className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-                    <div>
-                      <p className="font-bold text-amber-900">You are using your 1 free lesson plan</p>
-                      <p className="text-[11px] text-amber-800">Upgrade to STEM Educator Pro for unlimited custom lesson generations and classroom slide decks.</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowUpgradeModal(true)}
-                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    Upgrade Now
-                  </button>
+              {savedLessons.length === 0 ? (
+                <div className="text-center py-6 px-4 bg-white border border-dashed border-black/[0.08] rounded-xl text-xs text-secondary font-sans space-y-1">
+                  <Bookmark className="w-5 h-5 text-slate-300 mx-auto" />
+                  <p className="font-bold text-slate-700">No saved lesson plans yet</p>
+                  <p className="text-[10px] text-slate-500">Your custom STEM materials will appear here once saved to the cloud.</p>
                 </div>
-              )}
+              ) : (
+                <>
+                  {!isSubscribed && savedLessons.length === 1 && (
+                    <div className="bg-amber-50/70 border border-amber-200/50 p-3.5 rounded-xl flex items-center justify-between gap-4 text-xs font-sans">
+                      <div className="flex gap-2 items-start">
+                        <Sparkles className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                        <div>
+                          <p className="font-bold text-amber-900">You are using your 1 free lesson plan</p>
+                          <p className="text-[11px] text-amber-800">Upgrade to STEM Educator Pro for unlimited custom lesson generations and classroom slide decks.</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        Upgrade Now
+                      </button>
+                    </div>
+                  )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {savedLessons.map((saved) => (
-                  <div 
-                    key={saved.id}
-                    className="p-3.5 rounded-xl border border-black/[0.06] bg-white hover:border-teal-brand/40 transition-all flex justify-between items-center gap-3 shadow-3xs"
-                  >
-                    <div className="overflow-hidden flex-1 space-y-0.5">
-                      <p className="text-xs font-bold text-primary truncate">{saved.lessonTitle}</p>
-                      <span className="text-[10px] text-secondary font-sans block">{saved.duration} Block</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLesson(saved);
-                          setActiveTab("slides");
-                        }}
-                        className="px-2.5 py-1 bg-teal-light text-teal-brand hover:bg-teal-brand hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-3xs cursor-pointer"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {savedLessons.map((saved) => (
+                      <div 
+                        key={saved.id}
+                        className="p-3.5 rounded-xl border border-black/[0.06] bg-white hover:border-teal-brand/40 transition-all flex justify-between items-center gap-3 shadow-3xs"
                       >
-                        Load
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (confirm(`Delete "${saved.lessonTitle}"?`)) {
-                            try {
-                              await deleteLessonFromCloud(saved.id);
-                            } catch (err: any) {
-                              alert("Failed: " + err.message);
-                            }
-                          }
-                        }}
-                        className="p-1.5 hover:bg-red-50 text-secondary hover:text-red-600 rounded-lg transition-all cursor-pointer"
-                        title="Delete Lesson"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                        <div className="overflow-hidden flex-1 space-y-0.5">
+                          <p className="text-xs font-bold text-primary truncate">{saved.lessonTitle}</p>
+                          <span className="text-[10px] text-secondary font-sans block">{saved.duration} Block</span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLesson(saved);
+                              setActiveTab("slides");
+                            }}
+                            className="px-2.5 py-1 bg-teal-light text-teal-brand hover:bg-teal-brand hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-3xs cursor-pointer"
+                          >
+                            Load
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm(`Delete "${saved.lessonTitle}"?`)) {
+                                try {
+                                  await deleteLessonFromCloud(saved.id);
+                                } catch (err: any) {
+                                  alert("Failed: " + err.message);
+                                }
+                              }
+                            }}
+                            className="p-1.5 hover:bg-red-50 text-secondary hover:text-red-600 rounded-lg transition-all cursor-pointer"
+                            title="Delete Lesson"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1968,224 +1978,6 @@ export default function App() {
               </AnimatePresence>
             </div>
 
-          </div>
-
-          {/* Pain Points (ly-pain) */}
-          <div className="border-t border-black/[0.05] pt-10 space-y-6" id="pain-points-section">
-            <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-gold-brand uppercase tracking-widest font-sans">The Afterschool Struggle</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">STEM curriculum is broken by default</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-5 space-y-2">
-                <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-brand shrink-0">
-                  <Link2Off className="w-4.5 h-4.5" />
-                </div>
-                <h4 className="text-xs font-bold text-teal-dark uppercase font-sans">The "404 Broken Link" Trap</h4>
-                <p className="text-xs text-secondary leading-relaxed font-sans">
-                  Instructors frequently run into dead intranet references or private videos right as class starts, wasting precious interactive teaching cycles.
-                </p>
-              </div>
-
-              <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-5 space-y-2">
-                <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-teal-brand shrink-0">
-                  <FileText className="w-4.5 h-4.5" />
-                </div>
-                <h4 className="text-xs font-bold text-teal-dark uppercase font-sans">Dense Text Overwhelm</h4>
-                <p className="text-xs text-secondary leading-relaxed font-sans">
-                  Standard curriculum is dry and paragraph-heavy, making it very difficult for kids to stay engaged during afterschool hours.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Transformation Pipeline */}
-          <div className="bg-teal-dark text-white rounded-2xl p-6.5 space-y-4 text-center relative overflow-hidden" id="pipeline-section">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-brand/10 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono font-bold text-teal-brand uppercase tracking-widest">HOW LYRA TRANSFORMS LESSONS</span>
-              <h3 className="font-serif text-xl font-bold text-teal-light">The Interactive Pipeline</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 text-left">
-              <div className="bg-black/[0.15] p-4 rounded-xl border border-white/[0.05] space-y-1">
-                <span className="text-[10px] font-mono text-teal-brand block font-bold">STAGE 01</span>
-                <h5 className="text-xs font-bold font-sans">Raw Curriculum Intake</h5>
-                <p className="text-[10px] text-teal-light/80 leading-relaxed font-sans">Drop standard textbooks, plain articles, or raw outlines into the parser.</p>
-              </div>
-
-              <div className="bg-black/[0.15] p-4 rounded-xl border border-white/[0.05] space-y-1">
-                <span className="text-[10px] font-mono text-teal-brand block font-bold">STAGE 02</span>
-                <h5 className="text-xs font-bold font-sans">AI Alignment Engine</h5>
-                <p className="text-[10px] text-teal-light/80 leading-relaxed font-sans">Gemini restructures text into active gamified modules tailored for specific age groups.</p>
-              </div>
-
-              <div className="bg-black/[0.15] p-4 rounded-xl border border-white/[0.05] space-y-1">
-                <span className="text-[10px] font-mono text-teal-brand block font-bold">STAGE 03</span>
-                <h5 className="text-xs font-bold font-sans">Multi-Channel Outputs</h5>
-                <p className="text-[10px] text-teal-light/80 leading-relaxed font-sans">Instantly yields slides, experimental guides, printable sheets, and quiz modules.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Camp Metrics (ly-metrics) */}
-          <div className="border-t border-black/[0.05] pt-10 space-y-6" id="metrics-section">
-            <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-gold-brand uppercase tracking-widest font-sans">PROVEN PEDAGOGICAL METRICS</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">Curriculum Efficiency Accomplished</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-              <div className="bg-surface-0 border border-black/[0.04] p-5.5 rounded-2xl space-y-1 shadow-3xs">
-                <span className="font-serif text-3.5xl font-bold text-teal-brand block leading-none">14,200+</span>
-                <span className="text-[10px] font-bold text-teal-dark uppercase font-sans tracking-wide">Instructor Hours Saved</span>
-                <p className="text-[10px] text-secondary font-sans leading-normal">Unpaid prep time reduced to zero.</p>
-              </div>
-
-              <div className="bg-surface-0 border border-black/[0.04] p-5.5 rounded-2xl space-y-1 shadow-3xs">
-                <span className="font-serif text-3.5xl font-bold text-teal-brand block leading-none">250+</span>
-                <span className="text-[10px] font-bold text-teal-dark uppercase font-sans tracking-wide">Schools & Camps</span>
-                <p className="text-[10px] text-secondary font-sans leading-normal">Active deployments across regions.</p>
-              </div>
-
-              <div className="bg-surface-0 border border-black/[0.04] p-5.5 rounded-2xl space-y-1 shadow-3xs">
-                <span className="font-serif text-3.5xl font-bold text-teal-brand block leading-none">$0</span>
-                <span className="text-[10px] font-bold text-teal-dark uppercase font-sans tracking-wide">District Friction</span>
-                <p className="text-[10px] text-secondary font-sans leading-normal">Fully offline/cloud hybrid compatible.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing Plans (ly-pricing) */}
-          <div className="border-t border-black/[0.05] pt-10 space-y-6" id="pricing-section">
-            <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-teal-brand uppercase tracking-widest font-sans">Simple, Transparent Pricing</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">Choose the perfect plan for your classroom</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {/* Plan 1 */}
-              <div className="bg-white border border-black/[0.12] rounded-2xl p-6 flex flex-col justify-between text-left space-y-4">
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-secondary">Instructor Demo</span>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$0</span>
-                    <span className="text-[10px] text-secondary">/ month</span>
-                  </div>
-                  <p className="text-[11px] text-secondary leading-relaxed">Try Lyra on your own and generate up to 3 full interactive lesson packages.</p>
-                </div>
-                <button 
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="w-full py-2 bg-white border border-black/[0.1] hover:bg-surface-0 text-teal-dark rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center"
-                >
-                  {isSubscribed ? "Free Demo Included" : "Try for Free"}
-                </button>
-              </div>
-
-              {/* Plan 2 */}
-              <div className="border-2 border-teal-brand bg-teal-light/10 rounded-2xl p-6 flex flex-col justify-between text-left space-y-4 relative transform scale-[1.02]">
-                <span className="absolute top-0 right-4 -translate-y-1/2 bg-teal-brand text-white text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                  Most Popular
-                </span>
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-teal-dark">STEM Educator Pro</span>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$19.99</span>
-                    <span className="text-[10px] text-secondary">/ month</span>
-                  </div>
-                  <p className="text-[11px] text-secondary leading-relaxed">Perfect for active afterschool tutors, classroom teachers, and home educators.</p>
-                </div>
-                <button 
-                  onClick={() => isSubscribed ? null : setShowUpgradeModal(true)}
-                  className={`w-full py-2 rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center ${
-                    isSubscribed ? "bg-teal-brand/20 text-teal-dark cursor-default" : "bg-teal-dark hover:bg-opacity-95 text-white"
-                  }`}
-                >
-                  {isSubscribed ? "Currently Active" : "Subscribe Now"}
-                </button>
-              </div>
-
-              {/* Plan 3 */}
-              <div className="bg-white border border-black/[0.12] rounded-2xl p-6 flex flex-col justify-between text-left space-y-4">
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-secondary">STEM Camp Director</span>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="font-serif text-3.5xl font-bold text-teal-dark">$49.99</span>
-                    <span className="text-[10px] text-secondary">/ month</span>
-                  </div>
-                  <p className="text-[11px] text-secondary leading-relaxed">For science camps, learning centers, and school administrators running multiple classrooms.</p>
-                </div>
-                <button 
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="w-full py-2 bg-white border border-black/[0.1] hover:bg-surface-0 text-teal-dark rounded-full text-[10px] font-bold transition-all shadow-3xs cursor-pointer text-center"
-                >
-                  Upgrade Team
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 90-Day Launch Roadmap */}
-          <div className="border-t border-black/[0.05] pt-10 space-y-6" id="timeline-section">
-            <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-gold-brand uppercase tracking-widest font-sans">District Rollout Roadmap</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">The 90-Day Pilot Plan</h3>
-            </div>
-
-            <div className="space-y-4 max-w-lg mx-auto">
-              {[
-                { day: "Days 1-15", title: "Intake & Setup", desc: "Integrate student registers, connect Firestore cloud database instances, and train leadership teams." },
-                { day: "Days 16-45", title: "Live Trials & Tweaks", desc: "Run secondary classroom modules, test media recovery recommendations, and track alignment scores." },
-                { day: "Days 46-90", title: "District Deployment", desc: "Complete general rollouts, verify metrics logs, and execute summer-to-autumn transformations." }
-              ].map((step, idx) => (
-                <div key={idx} className="flex gap-4 items-start p-4 bg-surface-0 border border-black/[0.04] rounded-2xl shadow-3xs">
-                  <div className="w-9 h-9 rounded-xl bg-teal-light text-teal-brand font-serif font-bold flex items-center justify-center shrink-0 border border-teal-brand/10">
-                    {idx + 1}
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="text-[9px] font-mono font-bold text-gold-brand uppercase">{step.day}</span>
-                    <h5 className="text-xs font-bold text-teal-dark font-sans">{step.title}</h5>
-                    <p className="text-[11px] text-secondary leading-relaxed font-sans font-normal">{step.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Infrastructure & Stack (ly-stack) */}
-          <div className="border-t border-black/[0.05] pt-10 space-y-6" id="stack-section">
-            <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-bold text-gold-brand uppercase tracking-widest font-sans">Secure, Scalable Foundation</span>
-              <h3 className="font-serif text-2xl font-bold text-teal-dark">Modern Stack & Platform Standards</h3>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="bg-surface-0/60 p-4 rounded-xl text-center space-y-1.5 border border-black/[0.03]">
-                <Sparkles className="w-5 h-5 text-teal-brand mx-auto" />
-                <h6 className="text-[10px] font-bold text-teal-dark uppercase font-sans">Gemini 1.5 Flash</h6>
-                <p className="text-[9px] text-secondary font-sans leading-normal">Smart curriculum restructuring.</p>
-              </div>
-
-              <div className="bg-surface-0/60 p-4 rounded-xl text-center space-y-1.5 border border-black/[0.03]">
-                <Database className="w-5 h-5 text-teal-brand mx-auto" />
-                <h6 className="text-[10px] font-bold text-teal-dark uppercase font-sans">Cloud Firestore</h6>
-                <p className="text-[9px] text-secondary font-sans leading-normal">Durable persistent state storage.</p>
-              </div>
-
-              <div className="bg-surface-0/60 p-4 rounded-xl text-center space-y-1.5 border border-black/[0.03]">
-                <FileCode className="w-5 h-5 text-teal-brand mx-auto" />
-                <h6 className="text-[10px] font-bold text-teal-dark uppercase font-sans">TypeScript React</h6>
-                <p className="text-[9px] text-secondary font-sans leading-normal">Statically typed components.</p>
-              </div>
-
-              <div className="bg-surface-0/60 p-4 rounded-xl text-center space-y-1.5 border border-black/[0.03]">
-                <BookOpen className="w-5 h-5 text-teal-brand mx-auto" />
-                <h6 className="text-[10px] font-bold text-teal-dark uppercase font-sans">Tailwind v4</h6>
-                <p className="text-[9px] text-secondary font-sans leading-normal">Responsive design utility tokens.</p>
-              </div>
-            </div>
           </div>
 
         </section>
