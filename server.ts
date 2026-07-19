@@ -7,10 +7,7 @@ import { createServer as createViteServer } from "vite";
 import mammoth from "mammoth";
 import Stripe from "stripe";
 
-// @ts-ignore
-import * as pdfParseNamespace from "pdf-parse";
-// @ts-ignore
-const pdfParse = pdfParseNamespace.default || pdfParseNamespace;
+import { PDFParse } from "pdf-parse";
 
 dotenv.config();
 
@@ -69,7 +66,8 @@ app.post("/api/extract-text", async (req, res) => {
     let extractedText = "";
 
     if (extension === "pdf") {
-      const data = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const data = await parser.getText();
       extractedText = data.text || "";
     } else if (extension === "docx") {
       const result = await mammoth.extractRawText({ buffer });

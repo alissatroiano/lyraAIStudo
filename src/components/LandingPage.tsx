@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   Sparkles, 
   Clock, 
@@ -30,6 +30,19 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, authLoading, authError }) => {
   const isIframe = typeof window !== "undefined" && window.self !== window.top;
+  const [localLoading, setLocalLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    if (localLoading || authLoading) return;
+    try {
+      setLocalLoading(true);
+      await signInWithGoogle();
+    } catch (e) {
+      console.error("Local sign-in wrapper failed:", e);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f6fb] text-[#0f1117] flex flex-col font-sans antialiased">
@@ -92,11 +105,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ signInWithGoogle, auth
               <div className="pt-2 space-y-3">
                 <button
                   type="button"
-                  onClick={signInWithGoogle}
-                  className="px-7 py-4 bg-[#1a4a45] hover:bg-opacity-95 text-white rounded-full text-sm font-bold transition-all shadow-md flex items-center gap-2"
+                  onClick={handleSignIn}
+                  disabled={localLoading || authLoading}
+                  className="px-7 py-4 bg-[#1a4a45] hover:bg-opacity-95 text-white rounded-full text-sm font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed select-none"
                 >
-                  <LogIn className="w-4 h-4 text-[#00C2B2]" />
-                  <span>Sign In with Google to Start</span>
+                  {localLoading || authLoading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : (
+                    <LogIn className="w-4 h-4 text-[#00C2B2] shrink-0" />
+                  )}
+                  <span>{localLoading || authLoading ? "Signing In with Google..." : "Sign In with Google to Start"}</span>
                 </button>
 
                 {/* Friendly Iframe Sign-in Hint */}

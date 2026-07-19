@@ -160,7 +160,18 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
       console.error("Google Auth sign-in failed:", err);
-      setError(err?.message || "Sign-in failed");
+      const code = err?.code || "";
+      const msg = err?.message || "";
+      
+      if (code === "auth/cancelled-popup-request" || msg.includes("cancelled-popup-request")) {
+        setError("The sign-in popup was blocked or cancelled. Because you are in the AI Studio preview pane, you must click 'Open App in New Tab' at the top-right of your screen to sign in.");
+      } else if (code === "auth/popup-closed-by-user" || msg.includes("popup-closed-by-user")) {
+        setError("The Google Sign-In window was closed before completion. Please click Sign In again and complete the Google login flow.");
+      } else if (code === "auth/popup-blocked" || msg.includes("popup-blocked")) {
+        setError("The Google Sign-In popup was blocked by your browser. Please allow popups for this site or click 'Open App in New Tab' at the top-right.");
+      } else {
+        setError(msg || "Sign-in failed");
+      }
     }
   };
 
