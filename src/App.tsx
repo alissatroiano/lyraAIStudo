@@ -111,8 +111,11 @@ export default function App() {
     const handleRouting = () => {
       const hash = window.location.hash;
       const path = window.location.pathname;
+      const search = window.location.search;
       
-      if (
+      if (search.includes("presentation=true")) {
+        setCurrentRoute("presentation");
+      } else if (
         hash === "#/success" || 
         hash.startsWith("#/success") || 
         path === "/success" || 
@@ -187,6 +190,17 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
+
+  // Synchronize the current active lesson to localStorage for presentation popup windows
+  useEffect(() => {
+    if (lesson && lesson.lessonTitle && lesson.lessonTitle !== "Untitled STEM Lesson") {
+      try {
+        localStorage.setItem("active_lesson", JSON.stringify(lesson));
+      } catch (err) {
+        console.error("Failed to sync active lesson to localStorage:", err);
+      }
+    }
+  }, [lesson]);
 
   // Dyslexia & Neurodiverse Assistive states
   const [dyslexiaMode, setDyslexiaMode] = useState<boolean>(false);
@@ -855,6 +869,59 @@ export default function App() {
   };
 
   const isLightBackground = antiGlare !== "none";
+
+  if (currentRoute === "presentation") {
+    const savedLessonRaw = localStorage.getItem("active_lesson");
+    let presentationLesson = lesson;
+    if (savedLessonRaw) {
+      try {
+        presentationLesson = JSON.parse(savedLessonRaw);
+      } catch (e) {
+        console.error("Failed to parse active lesson:", e);
+      }
+    }
+    
+    return (
+      <div className="min-h-screen bg-slate-950 text-white font-sans antialiased flex flex-col p-6 md:p-12 justify-between">
+        {/* Header with Exit controls, school branding */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-teal-brand animate-pulse" />
+            <div className="text-left">
+              <span className="font-serif text-lg font-bold text-teal-light">
+                {presentationLesson.lessonTitle || "STEM Interactive Class Presentation"}
+              </span>
+              <p className="text-[10px] text-slate-400 font-sans tracking-wide">
+                Powered by Lyra Smartboard Presentation Engine
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
+          >
+            Close Presentation
+          </button>
+        </div>
+
+        {/* Full-width Slideshow */}
+        <div className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full">
+          <InteractiveSlideshow
+            slides={presentationLesson.slides || []}
+            dyslexiaMode={dyslexiaMode}
+            antiGlare={antiGlare}
+            readingRuler={readingRuler}
+            bionicReading={bionicReading}
+            ttsSpeed={ttsSpeed}
+            speakText={speakText}
+            stopSpeaking={stopSpeaking}
+            isSpeaking={isSpeaking}
+            formatBionicText={formatBionicText}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (

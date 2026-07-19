@@ -12,7 +12,10 @@ import {
   Layers,
   Presentation,
   Volume2,
-  VolumeX
+  VolumeX,
+  ExternalLink,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Slide } from "../types";
 
@@ -45,9 +48,35 @@ export default function InteractiveSlideshow({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [slideTimer, setSlideTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isLocalFullscreen, setIsLocalFullscreen] = useState(false);
   
   const rulerRef = React.useRef<HTMLDivElement>(null);
+  const slideshowContainerRef = React.useRef<HTMLDivElement>(null);
   const [rulerTop, setRulerTop] = useState(120);
+
+  const isPresentationWindow = typeof window !== "undefined" && window.location.search.includes("presentation=true");
+
+  // Keyboard navigation for arrow keys and Space and Escape
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
+      if (isPresentationWindow || isLocalFullscreen) {
+        if (e.key === "ArrowRight" || e.key === " ") {
+          e.preventDefault();
+          setCurrentIndex((prev) => (prev + 1) % slides.length);
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
+        } else if (e.key === "Escape") {
+          setIsLocalFullscreen(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPresentationWindow, isLocalFullscreen, slides.length]);
 
   if (!slides || slides.length === 0) {
     return (
@@ -118,10 +147,141 @@ export default function InteractiveSlideshow({
     border: isLightBackground ? "border-black/5" : "border-white/10",
   };
 
+  if (isLocalFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col justify-between p-6 sm:p-10 md:p-16 antialiased select-none font-sans overflow-y-auto">
+        {/* Fullscreen header */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-teal-brand animate-pulse" />
+            <div className="text-left">
+              <h4 className="text-sm font-bold text-teal-light uppercase tracking-wider font-mono">
+                Presenting Interactive Lesson
+              </h4>
+              <p className="text-[10px] text-slate-400">
+                Slide {currentIndex + 1} of {slides.length} — Press Esc to exit or use Arrow Keys/Space to navigate
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => speakText(`Slide ${currentIndex + 1}: ${currentSlide.title}. ` + currentSlide.content.join(" "), ttsSpeed)}
+              className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center border cursor-pointer ${
+                isSpeaking
+                  ? "bg-red-500/20 border-red-500 text-red-400"
+                  : "bg-slate-900 border-white/10 text-teal-brand hover:bg-slate-800"
+              }`}
+            >
+              {isSpeaking ? <VolumeX className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowNotes(!showNotes)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
+                showNotes 
+                  ? "bg-teal-brand text-white border-teal-brand" 
+                  : "bg-slate-900 border-white/10 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{showNotes ? "Hide Cues" : "Show Cues"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsLocalFullscreen(false)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-white/10 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              Exit Presentation
+            </button>
+          </div>
+        </div>
+
+        {/* Big visual slide frame */}
+        <div className="flex-1 flex flex-col justify-center py-8 max-w-4xl mx-auto w-full text-left space-y-8">
+          <div className="space-y-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-teal-brand font-mono">
+              SLIDE {currentIndex + 1} OF {slides.length}
+            </span>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-white flex items-center justify-between gap-4 ${dyslexiaMode ? "dyslexia-mode-styles" : "font-sans"}`}>
+              <span>{currentSlide.title}</span>
+            </h2>
+          </div>
+
+          <div className="space-y-6">
+            {currentSlide.content.map((point, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-start gap-4"
+              >
+                <span className="w-7 h-7 rounded-full bg-teal-brand/20 text-teal-brand border border-teal-brand/30 flex items-center justify-center text-sm font-bold shrink-0 mt-1">
+                  {index + 1}
+                </span>
+                <p className={`text-lg sm:text-xl md:text-2xl leading-relaxed text-slate-100 ${dyslexiaMode ? "dyslexia-mode-styles" : "font-sans"}`}>
+                  {bionicReading ? formatBionicText(point) : point}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          {currentSlide.visualConcept && (
+            <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-2 mt-4 text-left">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-teal-brand font-mono">Suggested Smartboard Sketch:</span>
+              <p className="text-xs text-slate-300 italic font-sans">
+                "{currentSlide.visualConcept}"
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Big presenter notes + navigation controls footer */}
+        <div className="border-t border-white/10 pt-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="w-12 h-12 rounded-xl bg-slate-900 border border-white/10 hover:bg-slate-800 text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="w-12 h-12 rounded-xl bg-slate-900 border border-white/10 hover:bg-slate-800 text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Instructor Notes */}
+          {showNotes && currentSlide.instructorNotes && (
+            <div className="flex-1 max-w-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 rounded-2xl p-4 text-xs font-sans text-left md:mx-6 leading-relaxed">
+              <span className="font-bold text-amber-400 block uppercase text-[9px] tracking-wider mb-1">FACILITATOR CUES & PROMPTS:</span>
+              {currentSlide.instructorNotes}
+            </div>
+          )}
+
+          <div className="text-right shrink-0">
+            <span className="text-[10px] font-mono block uppercase text-slate-400">Class Deck view</span>
+            <span className="text-xl font-sans text-teal-brand font-bold">
+              {currentIndex + 1} / {slides.length}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6" id="interactive-slides-container">
       {/* Upper header controls */}
-      <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center text-teal-brand border border-teal-brand/10 shrink-0">
             <Presentation className="w-5 h-5" />
@@ -140,7 +300,7 @@ export default function InteractiveSlideshow({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2 justify-end">
           <button
             type="button"
             onClick={() => speakText(`Slide ${currentIndex + 1}: ${currentSlide.title}. ` + currentSlide.content.join(" "), ttsSpeed)}
@@ -179,6 +339,30 @@ export default function InteractiveSlideshow({
           >
             {isPlaying ? <Pause className="w-4 h-4 text-teal-brand" /> : <Play className="w-4 h-4 text-secondary" />}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsLocalFullscreen(true)}
+            className="px-3 py-1.5 bg-white border border-black/[0.08] text-teal-dark hover:bg-surface-0 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+            title="Present Fullscreen (Immersive Theater Mode)"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-teal-brand" />
+            <span>Present Fullscreen</span>
+          </button>
+
+          {!isPresentationWindow && (
+            <button
+              type="button"
+              onClick={() => {
+                window.open(window.location.origin + window.location.pathname + "?presentation=true", "_blank");
+              }}
+              className="px-3 py-1.5 bg-teal-light text-teal-dark hover:bg-[#bbf7f2] border border-teal-brand/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+              title="Open dedicated slideshow in a new window"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-teal-brand" />
+              <span>Open in New Window</span>
+            </button>
+          )}
         </div>
       </div>
 
