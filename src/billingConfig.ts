@@ -1,4 +1,4 @@
-export const DEPLOYED_URL = "https://lyra-learning.ai.studio";
+export const DEPLOYED_URL = "https://ai.studio/apps/5eadd9a9-e2c1-4930-9c95-9e6341588fa2?fullscreenApplet=true";
 export const MONTHLY_PRICE_ID = "price_1TugFoIlpAU3gYFIIfj9wvVZ";
 export const YEARLY_PRICE_ID = "price_1TugCCIlpAU3gYFIhzWd5kxZ";
 export const WEEKLY_PRICE_ID = "price_1TugAPIlpAU3gYFIpKyT4mbM";

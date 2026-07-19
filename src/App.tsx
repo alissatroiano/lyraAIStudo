@@ -54,42 +54,34 @@ import { Elements } from "@stripe/react-stripe-js";
 import { LandingPage } from "./components/LandingPage";
 import { SubscriptionWall } from "./components/SubscriptionWall";
 
-const stripePromise = loadStripe("pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW");
+const stripePromise = fetch("/api/stripe-config")
+  .then((res) => {
+    if (!res.ok) throw new Error("Failed to load Stripe config");
+    return res.json();
+  })
+  .then((data) => {
+    const key = data.publishableKey || "pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW";
+    return loadStripe(key);
+  })
+  .catch((err) => {
+    console.error("Error loading Stripe config dynamically:", err);
+    return loadStripe("pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW");
+  });
 
-// Vector Robot Bunny Mascot SVG
-const RobotBunnyMascot = ({ className = "w-28 h-28" }: { className?: string }) => (
-  <svg viewBox="0 0 120 120" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Ears */}
-    <g transform="translate(0, -4)">
-      {/* Left Ear */}
-      <rect x="36" y="8" width="14" height="42" rx="7" fill="#1a4a45" />
-      <rect x="40" y="14" width="6" height="30" rx="3" fill="#00C2B2" />
-      {/* Right Ear */}
-      <rect x="70" y="8" width="14" height="42" rx="7" fill="#1a4a45" />
-      <rect x="74" y="14" width="6" height="30" rx="3" fill="#00C2B2" />
-    </g>
-    {/* Head / Body */}
-    <rect x="30" y="44" width="60" height="52" rx="20" fill="#1a4a45" stroke="#00C2B2" strokeWidth="2.5" />
-    {/* Face Screen */}
-    <rect x="38" y="52" width="44" height="28" rx="10" fill="#0f1117" stroke="#2ec4b8" strokeWidth="1" />
-    {/* Glowing Eyes */}
-    <circle cx="50" cy="66" r="4.5" fill="#00C2B2" className="animate-pulse" />
-    <circle cx="70" cy="66" r="4.5" fill="#00C2B2" className="animate-pulse" />
-    {/* Cheek blush */}
-    <circle cx="43" cy="72" r="2" fill="#2ec4b8" opacity="0.6" />
-    <circle cx="77" cy="72" r="2" fill="#2ec4b8" opacity="0.6" />
-    {/* Little happy mouth */}
-    <path d="M57 73 Q60 76 63 73" stroke="#00C2B2" strokeWidth="1.5" strokeLinecap="round" />
-    {/* Antenna */}
-    <line x1="60" y1="44" x2="60" y2="34" stroke="#1a4a45" strokeWidth="3" />
-    <circle cx="60" cy="32" r="4.5" fill="#00C2B2" />
-    {/* Collar & Badge */}
-    <path d="M46 96 L60 92 L74 96 L60 101 Z" fill="#C97D10" />
-    {/* Sparkle badge on top right */}
-    <path d="M102 32 L104 38 L110 40 L104 42 L102 48 L100 42 L94 40 L100 38 Z" fill="#00C2B2" />
-    {/* Little yellow star sparkle on left */}
-    <path d="M16 64 L17 68 L21 69 L17 70 L16 74 L15 70 L11 69 L15 68 Z" fill="#C97D10" />
-  </svg>
+// Lyra Logo Component using the uploaded logo image (lyra.png/logo.png)
+const LyraLogo = ({ className = "w-28 h-28" }: { className?: string }) => (
+  <img 
+    src="/lyra.png" 
+    alt="Lyra Learning Logo" 
+    className={`${className} object-contain rounded-xl`}
+    referrerPolicy="no-referrer"
+    onError={(e) => {
+      const target = e.target as HTMLImageElement;
+      if (target.src.endsWith("/lyra.png")) {
+        target.src = "/logo.png";
+      }
+    }}
+  />
 );
 
 export default function App() {
@@ -113,6 +105,56 @@ export default function App() {
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [isManuallyEdited, setIsManuallyEdited] = useState<boolean>(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+  const [currentRoute, setCurrentRoute] = useState<string>("dashboard");
+
+  useEffect(() => {
+    const handleRouting = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      
+      if (
+        hash === "#/success" || 
+        hash.startsWith("#/success") || 
+        path === "/success" || 
+        path.startsWith("/success")
+      ) {
+        setCurrentRoute("success");
+      } else if (
+        hash === "#/failure" || 
+        hash.startsWith("#/failure") || 
+        path === "/failure" || 
+        path.startsWith("/failure") ||
+        hash === "#/cancel" ||
+        path === "/cancel"
+      ) {
+        setCurrentRoute("failure");
+      } else {
+        setCurrentRoute("dashboard");
+      }
+    };
+
+    handleRouting();
+    window.addEventListener("hashchange", handleRouting);
+    window.addEventListener("popstate", handleRouting);
+    return () => {
+      window.removeEventListener("hashchange", handleRouting);
+      window.removeEventListener("popstate", handleRouting);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentRoute === "success" || currentRoute === "failure") {
+      const timer = setTimeout(() => {
+        setCurrentRoute("dashboard");
+        if (window.location.hash) {
+          window.location.hash = "#/";
+        } else {
+          window.history.pushState({}, "", "/");
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRoute]);
 
   const handleSaveToCloud = async () => {
     if (!isSubscribed && savedLessons.length >= 1) {
@@ -529,12 +571,25 @@ export default function App() {
         }),
       });
 
+      const responseText = await response.text();
+
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server returned ${response.status}`);
+        let errData: any = {};
+        try {
+          errData = JSON.parse(responseText);
+        } catch {
+          // Response is not JSON
+        }
+        throw new Error(errData.error || `Server returned ${response.status}: ${responseText.substring(0, 150)}`);
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonErr) {
+        console.error("Failed to parse JSON response:", responseText);
+        throw new Error(`The server returned an invalid response format (HTML instead of JSON). First 150 characters: ${responseText.substring(0, 150)}`);
+      }
       setLesson(data);
 
       // Save extractedStyleNotes from Gemini into instructor's profile memory
@@ -812,6 +867,38 @@ export default function App() {
     );
   }
 
+  if (currentRoute === "success") {
+    return (
+      <div className="min-h-screen bg-[#f4f6fb] flex items-center justify-center font-sans antialiased">
+        <div className="bg-white border border-black/[0.08] p-8 rounded-3xl max-w-md w-full mx-4 shadow-xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-md animate-bounce">
+            <CheckCircle2 className="w-9 h-9" />
+          </div>
+          <h2 className="font-serif text-3xl font-bold text-teal-dark">Payment successful</h2>
+          <p className="text-sm text-secondary">
+            Redirecting to your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentRoute === "failure") {
+    return (
+      <div className="min-h-screen bg-[#f4f6fb] flex items-center justify-center font-sans antialiased">
+        <div className="bg-white border border-black/[0.08] p-8 rounded-3xl max-w-md w-full mx-4 shadow-xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 mx-auto shadow-md">
+            <AlertCircle className="w-9 h-9" />
+          </div>
+          <h2 className="font-serif text-3xl font-bold text-red-900">Payment cancelled</h2>
+          <p className="text-sm text-secondary">
+            Redirecting to your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <LandingPage signInWithGoogle={signInWithGoogle} authLoading={authLoading} authError={authError} />
@@ -937,7 +1024,7 @@ export default function App() {
 
             {/* Mascot float wrap on the right */}
             <div className="self-center md:self-auto shrink-0 bg-teal-light/40 border border-teal-brand/10 rounded-2xl p-4 shadow-3xs animate-float">
-              <RobotBunnyMascot className="w-24 h-24 sm:w-28 sm:h-28" />
+              <LyraLogo className="w-24 h-24 sm:w-28 sm:h-28" />
             </div>
           </div>
 

@@ -30,6 +30,12 @@ function getStripeClient(): Stripe | null {
 
 app.use(express.json({ limit: "50mb" }));
 
+// Log incoming requests for debugging API issues
+app.use((req, res, next) => {
+  console.log(`[Express Server] ${req.method} ${req.url}`);
+  next();
+});
+
 // Initialize Gemini Client safely
 // Set User-Agent as 'aistudio-build' for telemetry
 let ai: GoogleGenAI | null = null;
@@ -413,6 +419,14 @@ app.post("/api/video-download", async (req, res) => {
       details: error?.message || String(error)
     });
   }
+});
+
+
+// API endpoint to retrieve the public Stripe publishable key
+app.get("/api/stripe-config", (req, res) => {
+  res.json({
+    publishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || "pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW"
+  });
 });
 
 // API endpoint to create a Stripe payment intent
