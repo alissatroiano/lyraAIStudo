@@ -7,8 +7,6 @@ import { createServer as createViteServer } from "vite";
 import mammoth from "mammoth";
 import Stripe from "stripe";
 
-import { PDFParse } from "pdf-parse";
-
 dotenv.config();
 
 const app = express();
@@ -72,9 +70,22 @@ app.post("/api/extract-text", async (req, res) => {
     let extractedText = "";
 
     if (extension === "pdf") {
-      const parser = new PDFParse({ data: buffer });
-      const data = await parser.getText();
-      extractedText = data.text || "";
+      if (!ai) {
+        throw new Error("Gemini API client is not initialized.");
+      }
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: [
+          {
+            inlineData: {
+              mimeType: "application/pdf",
+              data: fileBase64,
+            },
+          },
+          "Extract all educational, structured, and scientific text from this PDF document. Retain math equations, science concepts, experiments, and lesson structures. Return only the plain extracted text.",
+        ],
+      });
+      extractedText = response.text || "";
     } else if (extension === "docx") {
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value || "";

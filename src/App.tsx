@@ -171,7 +171,7 @@ export default function App() {
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (err: any) {
       console.error("Failed to save lesson:", err);
-      alert("Failed to save lesson: " + err.message);
+      setError("Failed to save lesson: " + err.message);
     }
   };
 
@@ -190,6 +190,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
+  const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // Synchronize the current active lesson to localStorage for presentation popup windows
   useEffect(() => {
@@ -1512,34 +1513,52 @@ export default function App() {
                           <p className="text-xs font-bold text-primary truncate">{saved.lessonTitle}</p>
                           <span className="text-[10px] text-secondary font-sans block">{saved.duration} Block</span>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setLesson(saved);
-                              setActiveTab("slides");
-                            }}
-                            className="px-2.5 py-1 bg-teal-light text-teal-brand hover:bg-teal-brand hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-3xs cursor-pointer"
-                          >
-                            Load
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (confirm(`Delete "${saved.lessonTitle}"?`)) {
+                        {deletingLessonId === saved.id ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={async () => {
                                 try {
                                   await deleteLessonFromCloud(saved.id);
+                                  setDeletingLessonId(null);
                                 } catch (err: any) {
-                                  alert("Failed: " + err.message);
+                                  setError("Failed to delete lesson: " + err.message);
                                 }
-                              }
-                            }}
-                            className="p-1.5 hover:bg-red-50 text-secondary hover:text-red-600 rounded-lg transition-all cursor-pointer"
-                            title="Delete Lesson"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                              }}
+                              className="px-2 py-1 bg-red-600 text-white hover:bg-red-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-3xs"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingLessonId(null)}
+                              className="px-2 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLesson(saved);
+                                setActiveTab("slides");
+                              }}
+                              className="px-2.5 py-1 bg-teal-light text-teal-brand hover:bg-teal-brand hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-3xs cursor-pointer"
+                            >
+                              Load
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingLessonId(saved.id)}
+                              className="p-1.5 hover:bg-red-50 text-secondary hover:text-red-600 rounded-lg transition-all cursor-pointer"
+                              title="Delete Lesson"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

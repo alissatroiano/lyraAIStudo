@@ -47,7 +47,6 @@ export default function InteractiveSlideshow({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
-  const [slideTimer, setSlideTimer] = useState<NodeJS.Timeout | null>(null);
   const [isLocalFullscreen, setIsLocalFullscreen] = useState(false);
   
   const rulerRef = React.useRef<HTMLDivElement>(null);
@@ -97,27 +96,21 @@ export default function InteractiveSlideshow({
   };
 
   const togglePlay = () => {
-    if (isPlaying) {
-      if (slideTimer) {
-        clearInterval(slideTimer);
-        setSlideTimer(null);
-      }
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      const timer = setInterval(() => {
-        handleNext();
-      }, 7000);
-      setSlideTimer(timer);
-    }
+    setIsPlaying((prev) => !prev);
   };
 
-  // Clean up timer on unmount
+  // Manage the autoplay interval cleanly
   React.useEffect(() => {
+    if (!isPlaying) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 7000);
+
     return () => {
-      if (slideTimer) clearInterval(slideTimer);
+      clearInterval(timer);
     };
-  }, [slideTimer]);
+  }, [isPlaying, currentIndex, slides.length]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!readingRuler || !rulerRef.current) return;
@@ -396,11 +389,6 @@ export default function InteractiveSlideshow({
               key={idx}
               onClick={() => {
                 setCurrentIndex(idx);
-                if (isPlaying && slideTimer) {
-                  clearInterval(slideTimer);
-                  const timer = setInterval(() => handleNext(), 7000);
-                  setSlideTimer(timer);
-                }
               }}
               className="h-1 flex-1 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 cursor-pointer transition-all hover:bg-black/20 dark:hover:bg-white/20"
             >
