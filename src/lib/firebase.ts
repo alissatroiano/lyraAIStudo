@@ -17,9 +17,12 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL */
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId); /* CRITICAL */
 export const auth = getAuth();
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
+googleProvider.addScope('https://www.googleapis.com/auth/presentations');
+googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets');
 
 export enum OperationType {
   CREATE = 'create',

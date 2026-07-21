@@ -42,13 +42,15 @@ import {
   Brain,
   Save,
   Volume2,
-  VolumeX
+  VolumeX,
+  Presentation
 } from "lucide-react";
 import { PRELOADED_LESSONS } from "./data/preloadedLessons";
 import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
 import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
+import { createGoogleSlides } from "./lib/googleSlides";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { LandingPage } from "./components/LandingPage";
@@ -93,11 +95,13 @@ export default function App() {
     savedLessons, 
     saveLessonToCloud, 
     deleteLessonFromCloud, 
+    updateLessonGoogleSlides,
     saveInstructorPreferences,
     loadLessons,
     authLoading, 
     dbLoading,
-    error: authError
+    error: authError,
+    accessToken
   } = useFirebase();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -106,6 +110,8 @@ export default function App() {
   const [isManuallyEdited, setIsManuallyEdited] = useState<boolean>(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const [currentRoute, setCurrentRoute] = useState<string>("dashboard");
+  const [isExportingSlides, setIsExportingSlides] = useState<boolean>(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRouting = () => {
@@ -175,6 +181,65 @@ export default function App() {
     }
   };
 
+  const handleExportToGoogleSlides = async () => {
+    let currentToken = accessToken;
+    if (!user) {
+      setError("Please sign in with Google first to export to Google Slides.");
+      await signInWithGoogle();
+      return;
+    }
+
+    if (!currentToken) {
+      setExportError(null);
+      setIsExportingSlides(true);
+      try {
+        const token = await signInWithGoogle();
+        if (!token) {
+          throw new Error("Authorization failed. Please try again.");
+        }
+        currentToken = token;
+      } catch (err: any) {
+        setExportError(err.message || "Failed to obtain Google Slides permission.");
+        setIsExportingSlides(false);
+        return;
+      }
+    }
+
+    if (!currentToken) {
+      setExportError("Google Slides permission is required to perform this action.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to export "${lesson.lessonTitle}" as a Google Slides presentation? This will create a new presentation in your Google Drive.`
+    );
+    if (!confirmed) return;
+
+    setIsExportingSlides(true);
+    setExportError(null);
+
+    try {
+      const result = await createGoogleSlides(lesson, currentToken);
+      
+      // Update local lesson state
+      const updatedLesson = { ...lesson, googleSlides: result };
+      setLesson(updatedLesson);
+
+      const lessonId = (lesson as any).id;
+      if (lessonId) {
+        await updateLessonGoogleSlides(lessonId, result);
+      }
+
+      setSaveStatus("Exported to Google Slides!");
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err: any) {
+      console.error("Failed to export Google Slides:", err);
+      setExportError(err.message || "Failed to export Google Slides presentation.");
+    } finally {
+      setIsExportingSlides(false);
+    }
+  };
+
   // Selection and Input states
   const [selectedPreload, setSelectedPreload] = useState<string>("rocketry");
   const [customContent, setCustomContent] = useState<string>(PRELOADED_LESSONS[0]?.rawContent || "");
@@ -189,7 +254,7 @@ export default function App() {
   const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
+  const [activeTab, setActiveTab] = useState<"slides" | "quiz" | "googleSlides">("slides");
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // Synchronize the current active lesson to localStorage for presentation popup windows
@@ -1625,7 +1690,8 @@ export default function App() {
               <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl font-sans shrink-0 max-w-fit">
                 {[
                   { id: "slides", label: "Interactive Slides", icon: Layers },
-                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle }
+                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
+                  { id: "googleSlides", label: "Google Slides", icon: Presentation }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const isSelected = activeTab === tab.id;
@@ -2056,6 +2122,152 @@ export default function App() {
                         </div>
                       )}
 
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* TAB: Google Slides */}
+                {activeTab === "googleSlides" && (
+                  <motion.div
+                    key="tab-googleslides-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                    className="space-y-6 animate-fade-in w-full"
+                  >
+                    <div className="bg-white border border-black/[0.08] rounded-3xl p-6 sm:p-8 shadow-md space-y-6">
+                      <div className="flex items-start justify-between gap-4 border-b border-black/[0.06] pb-4">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-mono font-bold text-teal-brand uppercase tracking-wider block">
+                            Google Workspace Integration
+                          </span>
+                          <h4 className="text-lg font-bold font-sans text-teal-dark">
+                            Google Slides Educator Presentation
+                          </h4>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-200">
+                          <Presentation className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      {!user ? (
+                        <div className="text-center py-8 space-y-4 max-w-md mx-auto">
+                          <div className="w-12 h-12 rounded-full bg-slate-50 border border-black/[0.06] flex items-center justify-center text-slate-400 mx-auto">
+                            <LogIn className="w-6 h-6" />
+                          </div>
+                          <h5 className="font-bold text-slate-800">Sign In Required</h5>
+                          <p className="text-xs text-secondary leading-relaxed">
+                            To create, sync, and present your lessons as real Google Slides, please sign in with your educator Google account.
+                          </p>
+                          <button
+                            onClick={signInWithGoogle}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-dark hover:bg-opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            <LogIn className="w-4 h-4 text-teal-brand" />
+                            <span>Sign In with Google</span>
+                          </button>
+                        </div>
+                      ) : !lesson.googleSlides ? (
+                        <div className="text-center py-8 space-y-5 max-w-lg mx-auto">
+                          <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-brand mx-auto shadow-sm">
+                            <Sparkles className="w-8 h-8" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <h5 className="font-bold text-slate-800 text-sm">Export "{lesson.lessonTitle}" to Google Slides</h5>
+                            <p className="text-xs text-secondary leading-relaxed max-w-sm mx-auto font-sans">
+                              Our intelligent educator assistant will generate a fully custom, high-impact slideshow including overview slides, core concepts, hands-on activities, and Jeopardy quiz slides directly in your Google Drive.
+                            </p>
+                          </div>
+
+                          {exportError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-left font-sans flex items-start gap-2 max-w-md mx-auto">
+                              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                              <span>{exportError}</span>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={handleExportToGoogleSlides}
+                            disabled={isExportingSlides}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-brand hover:bg-teal-mid text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                          >
+                            {isExportingSlides ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <span>Generating Google Slides...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Presentation className="w-4 h-4 text-teal-dark" />
+                                <span>Create Google Slides Presentation</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="p-4 bg-teal-brand/5 border border-teal-brand/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
+                                <Check className="w-3 h-3" /> Exported to Google Slides
+                              </span>
+                              <h5 className="text-sm font-bold text-slate-800 font-sans mt-1">
+                                {lesson.lessonTitle}
+                              </h5>
+                              <p className="text-xs text-secondary font-mono truncate max-w-[280px] sm:max-w-xs">
+                                Presentation ID: {lesson.googleSlides.presentationId}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={lesson.googleSlides.presentationUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-dark hover:bg-opacity-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                              >
+                                <span>Open Slideshow</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                onClick={handleExportToGoogleSlides}
+                                disabled={isExportingSlides}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-black/10 hover:bg-black/5 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-3.5 h-3.5 ${isExportingSlides ? "animate-spin" : ""}`} />
+                                <span>Re-export / Update</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {exportError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-left font-sans flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                              <span>{exportError}</span>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-secondary block font-sans">
+                              Live Interactive Slide Preview
+                            </label>
+                            <div className="relative border border-black/[0.08] rounded-2xl overflow-hidden shadow-inner aspect-video bg-slate-900 w-full">
+                              <iframe
+                                src={lesson.googleSlides.embedUrl}
+                                width="100%"
+                                height="100%"
+                                allowFullScreen={true}
+                                title="Google Slides Preview"
+                                className="absolute inset-0 w-full h-full border-0"
+                              />
+                            </div>
+                            <span className="text-[10px] text-secondary leading-normal block font-sans text-center mt-1">
+                              Pro Tip: You can share or edit this Google Slides deck directly inside your Google Drive or open it in full screen to present with live educator tools!
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}

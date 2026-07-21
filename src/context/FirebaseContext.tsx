@@ -3,7 +3,8 @@ import {
   User as FirebaseUser,
   onAuthStateChanged,
   signInWithPopup,
-  signOut
+  signOut,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { 
   doc, 
@@ -35,10 +36,12 @@ interface FirebaseContextType {
   authLoading: boolean;
   dbLoading: boolean;
   error: string | null;
-  signInWithGoogle: () => Promise<void>;
+  accessToken: string | null;
+  signInWithGoogle: () => Promise<string | null>;
   logOut: () => Promise<void>;
   saveLessonToCloud: (lessonData: ProcessedLesson) => Promise<string>;
   deleteLessonFromCloud: (lessonId: string) => Promise<void>;
+  updateLessonGoogleSlides: (lessonId: string, googleSlidesData: any) => Promise<void>;
   loadLessons: () => Promise<void>;
   saveInstructorPreferences: (
     customPreferences: string,
@@ -59,6 +62,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [dbLoading, setDbLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // Load user's saved lessons
   const loadLessons = async () => {
@@ -144,6 +148,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setProfile(null);
         setSavedLessons([]);
+        setAccessToken(null);
         setAuthLoading(false);
       }
     });
@@ -154,10 +159,16 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<string | null> => {
     try {
       setError(null);
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setAccessToken(credential.accessToken);
+        return credential.accessToken;
+      }
+      return null;
     } catch (err: any) {
       console.error("Google Auth sign-in failed:", err);
       const code = err?.code || "";
@@ -172,6 +183,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setError(msg || "Sign-in failed");
       }
+      return null;
     }
   };
 
@@ -179,6 +191,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       setError(null);
       await signOut(auth);
+      setAccessToken(null);
     } catch (err: any) {
       console.error("Logout failed:", err);
       setError("Logout failed");
@@ -208,6 +221,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       worksheet: lessonData.worksheet || { title: '', instructions: [], questions: [] },
       quiz: lessonData.quiz || [],
       mediaRecommendations: lessonData.mediaRecommendations || [],
+      googleSlides: lessonData.googleSlides || null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -238,6 +252,27 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await loadLessons();
     } catch (err: any) {
       handleFirestoreError(err, OperationType.DELETE, lessonPath);
+      throw err;
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  const updateLessonGoogleSlides = async (lessonId: string, googleSlidesData: any): Promise<void> => {
+    if (!auth.currentUser) {
+      throw new Error("You must be signed in to update Google Slides.");
+    }
+    setDbLoading(true);
+    setError(null);
+    const lessonPath = `lessons/${lessonId}`;
+
+    try {
+      const lessonRef = doc(db, 'lessons', lessonId);
+      await setDoc(lessonRef, { googleSlides: googleSlidesData, updatedAt: serverTimestamp() }, { merge: true });
+      await loadLessons();
+    } catch (err: any) {
+      console.error("Error updating lesson google slides:", err);
+      handleFirestoreError(err, OperationType.UPDATE, lessonPath);
       throw err;
     } finally {
       setDbLoading(false);
@@ -292,10 +327,12 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         authLoading,
         dbLoading,
         error,
+        accessToken,
         signInWithGoogle,
         logOut,
         saveLessonToCloud,
         deleteLessonFromCloud,
+        updateLessonGoogleSlides,
         loadLessons,
         saveInstructorPreferences
       }}

@@ -50,6 +50,11 @@ export interface ProcessedLesson {
   quiz: QuizQuestion[];
   mediaRecommendations: MediaRecommendation[];
   extractedStyleNotes?: string;
+  googleSlides?: {
+    presentationId: string;
+    presentationUrl: string;
+    embedUrl: string;
+  };
 }
 
 export interface PreloadedLesson {
