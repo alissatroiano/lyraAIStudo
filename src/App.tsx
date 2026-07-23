@@ -42,13 +42,17 @@ import {
   Brain,
   Save,
   Volume2,
-  VolumeX
+  VolumeX,
+  Flame
 } from "lucide-react";
 import { PRELOADED_LESSONS } from "./data/preloadedLessons";
 import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
 import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
+import HandsOnLabView from "./components/HandsOnLabView";
+import WorksheetView from "./components/WorksheetView";
+import CoTeacherView from "./components/CoTeacherView";
 import { SLIDE_STYLES } from "./lib/slideStyles";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -190,7 +194,7 @@ export default function App() {
   const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
+  const [activeTab, setActiveTab] = useState<"slides" | "coteacher" | "lab" | "worksheet" | "quiz">("slides");
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // Synchronize the current active lesson to localStorage for presentation popup windows
@@ -380,6 +384,16 @@ export default function App() {
 
   // Lab material checking states
   const [checkedMaterials, setCheckedMaterials] = useState<Record<string, boolean>>({});
+
+  const resetMaterials = () => {
+    const initialChecked: Record<string, boolean> = {};
+    if (lesson?.handsOnActivity?.materials) {
+      lesson.handsOnActivity.materials.forEach(m => {
+        initialChecked[m] = false;
+      });
+    }
+    setCheckedMaterials(initialChecked);
+  };
 
   // Worksheet simulated answers
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
@@ -1706,6 +1720,9 @@ export default function App() {
               <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl font-sans shrink-0 max-w-fit">
                 {[
                   { id: "slides", label: "Interactive Slides", icon: Layers },
+                  { id: "coteacher", label: "Lyra AI Co-Teacher", icon: Sparkles },
+                  { id: "lab", label: "Hands-On Lab", icon: Flame },
+                  { id: "worksheet", label: "Printable Worksheet", icon: FileText },
                   { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
@@ -1929,10 +1946,70 @@ export default function App() {
                   </motion.div>
                 )}
 
+                {/* TAB: Lyra AI Co-Teacher */}
+                {activeTab === "coteacher" && (
+                  <motion.div
+                    key="tab-coteacher-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <CoTeacherView 
+                      lesson={lesson} 
+                      dyslexiaMode={dyslexiaMode}
+                      bionicReading={bionicReading}
+                      formatBionicText={formatBionicText}
+                      speakText={speakText}
+                    />
+                  </motion.div>
+                )}
 
+                {/* TAB: Hands-On Lab */}
+                {activeTab === "lab" && (
+                  <motion.div
+                    key="tab-lab-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <HandsOnLabView 
+                      activity={lesson.handsOnActivity} 
+                      lessonTitle={lesson.lessonTitle}
+                      checkedMaterials={checkedMaterials}
+                      onToggleMaterial={toggleMaterial}
+                      onResetMaterials={resetMaterials}
+                      dyslexiaMode={dyslexiaMode}
+                      bionicReading={bionicReading}
+                      formatBionicText={formatBionicText}
+                      speakText={speakText}
+                      stopSpeaking={stopSpeaking}
+                      isSpeaking={isSpeaking}
+                    />
+                  </motion.div>
+                )}
 
+                {/* TAB: Printable Worksheet */}
+                {activeTab === "worksheet" && (
+                  <motion.div
+                    key="tab-worksheet-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <WorksheetView 
+                      worksheet={lesson.worksheet}
+                      lessonTitle={lesson.lessonTitle}
+                      dyslexiaMode={dyslexiaMode}
+                      bionicReading={bionicReading}
+                      formatBionicText={formatBionicText}
+                    />
+                  </motion.div>
+                )}
 
-                {/* TAB 4: Jeopardy Game Quiz */}
+                {/* TAB: Jeopardy Game Quiz */}
                 {activeTab === "quiz" && (
                   <motion.div
                     key="tab-quiz-content"
