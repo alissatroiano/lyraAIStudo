@@ -3,8 +3,7 @@ import {
   User as FirebaseUser,
   onAuthStateChanged,
   signInWithPopup,
-  signOut,
-  GoogleAuthProvider
+  signOut
 } from 'firebase/auth';
 import { 
   doc, 
@@ -36,12 +35,10 @@ interface FirebaseContextType {
   authLoading: boolean;
   dbLoading: boolean;
   error: string | null;
-  accessToken: string | null;
-  signInWithGoogle: () => Promise<string | null>;
+  signInWithGoogle: () => Promise<void>;
   logOut: () => Promise<void>;
   saveLessonToCloud: (lessonData: ProcessedLesson) => Promise<string>;
   deleteLessonFromCloud: (lessonId: string) => Promise<void>;
-  updateLessonGoogleSlides: (lessonId: string, googleSlidesData: any) => Promise<void>;
   loadLessons: () => Promise<void>;
   saveInstructorPreferences: (
     customPreferences: string,
@@ -49,7 +46,8 @@ interface FirebaseContextType {
     classSize?: string,
     duration?: string,
     tech?: string,
-    instructorNotes?: string
+    instructorNotes?: string,
+    style?: string
   ) => Promise<void>;
 }
 
@@ -62,7 +60,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [dbLoading, setDbLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // Load user's saved lessons
   const loadLessons = async () => {
@@ -148,7 +145,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setProfile(null);
         setSavedLessons([]);
-        setAccessToken(null);
         setAuthLoading(false);
       }
     });
@@ -159,16 +155,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  const signInWithGoogle = async (): Promise<string | null> => {
+  const signInWithGoogle = async () => {
     try {
       setError(null);
-      const result = await signInWithPopup(auth, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        setAccessToken(credential.accessToken);
-        return credential.accessToken;
-      }
-      return null;
+      await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
       console.error("Google Auth sign-in failed:", err);
       const code = err?.code || "";
@@ -183,7 +173,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setError(msg || "Sign-in failed");
       }
-      return null;
     }
   };
 
@@ -191,7 +180,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       setError(null);
       await signOut(auth);
-      setAccessToken(null);
     } catch (err: any) {
       console.error("Logout failed:", err);
       setError("Logout failed");
@@ -221,7 +209,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       worksheet: lessonData.worksheet || { title: '', instructions: [], questions: [] },
       quiz: lessonData.quiz || [],
       mediaRecommendations: lessonData.mediaRecommendations || [],
-      googleSlides: lessonData.googleSlides || null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -258,34 +245,14 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const updateLessonGoogleSlides = async (lessonId: string, googleSlidesData: any): Promise<void> => {
-    if (!auth.currentUser) {
-      throw new Error("You must be signed in to update Google Slides.");
-    }
-    setDbLoading(true);
-    setError(null);
-    const lessonPath = `lessons/${lessonId}`;
-
-    try {
-      const lessonRef = doc(db, 'lessons', lessonId);
-      await setDoc(lessonRef, { googleSlides: googleSlidesData, updatedAt: serverTimestamp() }, { merge: true });
-      await loadLessons();
-    } catch (err: any) {
-      console.error("Error updating lesson google slides:", err);
-      handleFirestoreError(err, OperationType.UPDATE, lessonPath);
-      throw err;
-    } finally {
-      setDbLoading(false);
-    }
-  };
-
   const saveInstructorPreferences = async (
     customPreferences: string,
     grade?: string,
     classSize?: string,
     duration?: string,
     tech?: string,
-    instructorNotes?: string
+    instructorNotes?: string,
+    style?: string
   ): Promise<void> => {
     if (!auth.currentUser) return;
     setDbLoading(true);
@@ -299,6 +266,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (classSize !== undefined) updatedFields.classSize = classSize;
       if (duration !== undefined) updatedFields.duration = duration;
       if (tech !== undefined) updatedFields.tech = tech;
+      if (style !== undefined) updatedFields.style = style;
       if (instructorNotes !== undefined) updatedFields.instructorNotes = instructorNotes;
 
       await setDoc(userDocRef, updatedFields, { merge: true });
@@ -327,12 +295,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         authLoading,
         dbLoading,
         error,
-        accessToken,
         signInWithGoogle,
         logOut,
         saveLessonToCloud,
         deleteLessonFromCloud,
-        updateLessonGoogleSlides,
         loadLessons,
         saveInstructorPreferences
       }}

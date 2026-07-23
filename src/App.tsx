@@ -42,15 +42,14 @@ import {
   Brain,
   Save,
   Volume2,
-  VolumeX,
-  Presentation
+  VolumeX
 } from "lucide-react";
 import { PRELOADED_LESSONS } from "./data/preloadedLessons";
 import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
 import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
-import { createGoogleSlides } from "./lib/googleSlides";
+import { SLIDE_STYLES } from "./lib/slideStyles";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { LandingPage } from "./components/LandingPage";
@@ -95,13 +94,11 @@ export default function App() {
     savedLessons, 
     saveLessonToCloud, 
     deleteLessonFromCloud, 
-    updateLessonGoogleSlides,
     saveInstructorPreferences,
     loadLessons,
     authLoading, 
     dbLoading,
-    error: authError,
-    accessToken
+    error: authError
   } = useFirebase();
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -110,8 +107,6 @@ export default function App() {
   const [isManuallyEdited, setIsManuallyEdited] = useState<boolean>(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const [currentRoute, setCurrentRoute] = useState<string>("dashboard");
-  const [isExportingSlides, setIsExportingSlides] = useState<boolean>(false);
-  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRouting = () => {
@@ -181,65 +176,6 @@ export default function App() {
     }
   };
 
-  const handleExportToGoogleSlides = async () => {
-    let currentToken = accessToken;
-    if (!user) {
-      setError("Please sign in with Google first to export to Google Slides.");
-      await signInWithGoogle();
-      return;
-    }
-
-    if (!currentToken) {
-      setExportError(null);
-      setIsExportingSlides(true);
-      try {
-        const token = await signInWithGoogle();
-        if (!token) {
-          throw new Error("Authorization failed. Please try again.");
-        }
-        currentToken = token;
-      } catch (err: any) {
-        setExportError(err.message || "Failed to obtain Google Slides permission.");
-        setIsExportingSlides(false);
-        return;
-      }
-    }
-
-    if (!currentToken) {
-      setExportError("Google Slides permission is required to perform this action.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to export "${lesson.lessonTitle}" as a Google Slides presentation? This will create a new presentation in your Google Drive.`
-    );
-    if (!confirmed) return;
-
-    setIsExportingSlides(true);
-    setExportError(null);
-
-    try {
-      const result = await createGoogleSlides(lesson, currentToken);
-      
-      // Update local lesson state
-      const updatedLesson = { ...lesson, googleSlides: result };
-      setLesson(updatedLesson);
-
-      const lessonId = (lesson as any).id;
-      if (lessonId) {
-        await updateLessonGoogleSlides(lessonId, result);
-      }
-
-      setSaveStatus("Exported to Google Slides!");
-      setTimeout(() => setSaveStatus(null), 3000);
-    } catch (err: any) {
-      console.error("Failed to export Google Slides:", err);
-      setExportError(err.message || "Failed to export Google Slides presentation.");
-    } finally {
-      setIsExportingSlides(false);
-    }
-  };
-
   // Selection and Input states
   const [selectedPreload, setSelectedPreload] = useState<string>("rocketry");
   const [customContent, setCustomContent] = useState<string>(PRELOADED_LESSONS[0]?.rawContent || "");
@@ -254,7 +190,7 @@ export default function App() {
   const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"slides" | "quiz" | "googleSlides">("slides");
+  const [activeTab, setActiveTab] = useState<"slides" | "quiz">("slides");
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // Synchronize the current active lesson to localStorage for presentation popup windows
@@ -454,6 +390,53 @@ export default function App() {
   const [selectedSize, setSelectedSize] = useState<string>("15-20 kids");
   const [selectedDuration, setSelectedDuration] = useState<string>("60 mins");
   const [selectedTech, setSelectedTech] = useState<string>("Smart Board");
+  const [selectedStyle, setSelectedStyle] = useState<string>("Modern STEM");
+
+  // Helper to format directive text
+  const formatDirectiveText = (
+    grade = selectedGrade,
+    size = selectedSize,
+    duration = selectedDuration,
+    tech = selectedTech,
+    style = selectedStyle
+  ) => {
+    return `Tailor for ${grade} grade, class size of ${size}, duration of ${duration}, with ${tech} available, styled in ${style} slide deck theme.`;
+  };
+
+  const handleGradeSelect = (newGrade: string) => {
+    setSelectedGrade(newGrade);
+    setIsManuallyEdited(false);
+    if (customPreferences && customPreferences.includes("Tailor for ") && customPreferences.includes("grade")) {
+      const updated = customPreferences.replace(/Tailor for [^,]+ grade/, `Tailor for ${newGrade} grade`);
+      setCustomPreferences(updated);
+    } else {
+      setCustomPreferences(formatDirectiveText(newGrade, selectedSize, selectedDuration, selectedTech, selectedStyle));
+    }
+  };
+
+  const handleTechSelect = (newTech: string) => {
+    setSelectedTech(newTech);
+    setIsManuallyEdited(false);
+    if (customPreferences && customPreferences.includes("with ") && customPreferences.includes("available")) {
+      const updated = customPreferences.replace(/with [^,]+ available/, `with ${newTech} available`);
+      setCustomPreferences(updated);
+    } else {
+      setCustomPreferences(formatDirectiveText(selectedGrade, selectedSize, selectedDuration, newTech, selectedStyle));
+    }
+  };
+
+  const handleStyleSelect = (newStyle: string) => {
+    setSelectedStyle(newStyle);
+    setIsManuallyEdited(false);
+    if (customPreferences && customPreferences.includes("styled in ")) {
+      const updated = customPreferences.replace(/styled in [^,]+ slide deck theme/, `styled in ${newStyle} slide deck theme`);
+      setCustomPreferences(updated);
+    } else if (customPreferences && customPreferences.trim().length > 0) {
+      setCustomPreferences(`${customPreferences.trim()}, styled in ${newStyle} slide deck theme.`);
+    } else {
+      setCustomPreferences(formatDirectiveText(selectedGrade, selectedSize, selectedDuration, selectedTech, newStyle));
+    }
+  };
 
   // Sync selected preload into custom content textbox
   useEffect(() => {
@@ -482,13 +465,12 @@ export default function App() {
     setStudentAnswers({});
   }, [lesson]);
 
-  // Append parameters helper when chips are changed (only if not manually edited)
+  // Append parameters helper on initialization if directive is empty
   useEffect(() => {
-    if (!isManuallyEdited) {
-      const specs = `Tailor for ${selectedGrade} grade, class size of ${selectedSize}, duration of ${selectedDuration}, with ${selectedTech} available.`;
-      setCustomPreferences(specs);
+    if (!customPreferences || customPreferences.trim() === "") {
+      setCustomPreferences(formatDirectiveText(selectedGrade, selectedSize, selectedDuration, selectedTech, selectedStyle));
     }
-  }, [selectedGrade, selectedSize, selectedDuration, selectedTech, isManuallyEdited]);
+  }, []);
 
   // Load preferences from Firebase Profile when logged in
   useEffect(() => {
@@ -501,11 +483,12 @@ export default function App() {
       if (profile.classSize) setSelectedSize(profile.classSize);
       if (profile.duration) setSelectedDuration(profile.duration);
       if (profile.tech) setSelectedTech(profile.tech);
+      if (profile.style) setSelectedStyle(profile.style);
     }
   }, [profile]);
 
   const handleAutoGenerateFromChips = () => {
-    const specs = `Tailor for ${selectedGrade} grade, class size of ${selectedSize}, duration of ${selectedDuration}, with ${selectedTech} available.`;
+    const specs = formatDirectiveText(selectedGrade, selectedSize, selectedDuration, selectedTech, selectedStyle);
     setCustomPreferences(specs);
     setIsManuallyEdited(false);
   };
@@ -519,7 +502,9 @@ export default function App() {
         selectedGrade,
         selectedSize,
         selectedDuration,
-        selectedTech
+        selectedTech,
+        undefined,
+        selectedStyle
       );
       setProfileSaveSuccess(true);
       setTimeout(() => setProfileSaveSuccess(false), 3000);
@@ -983,6 +968,8 @@ export default function App() {
             stopSpeaking={stopSpeaking}
             isSpeaking={isSpeaking}
             formatBionicText={formatBionicText}
+            selectedStyle={selectedStyle}
+            onStyleChange={handleStyleSelect}
           />
         </div>
       </div>
@@ -1362,11 +1349,11 @@ export default function App() {
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setSelectedGrade(val)}
-                        className={`text-[10px] px-2 py-1 rounded-md font-sans font-bold transition-all ${
+                        onClick={() => handleGradeSelect(val)}
+                        className={`text-[10px] px-2 py-1 rounded-md font-sans font-bold transition-all cursor-pointer ${
                           selectedGrade === val 
-                            ? "bg-teal-dark text-white" 
-                            : "bg-white text-secondary border border-black/[0.08]"
+                            ? "bg-teal-dark text-white ring-2 ring-teal-brand/30 shadow-2xs" 
+                            : "bg-white text-secondary border border-black/[0.08] hover:bg-slate-50"
                         }`}
                       >
                         {val}
@@ -1379,18 +1366,47 @@ export default function App() {
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-secondary uppercase font-sans">Technology Available</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {["Smart Board", "Chromebooks", "Low Tech (Paper Only)"].map((val) => (
+                    {["Smart Board", "Chromebooks", "Tablets", "Low Tech (Paper Only)"].map((val) => (
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setSelectedTech(val)}
-                        className={`text-[10px] px-2 py-1 rounded-md font-sans font-bold transition-all ${
+                        onClick={() => handleTechSelect(val)}
+                        className={`text-[10px] px-2 py-1 rounded-md font-sans font-bold transition-all cursor-pointer ${
                           selectedTech === val 
-                            ? "bg-teal-dark text-white" 
-                            : "bg-white text-secondary border border-black/[0.08]"
+                            ? "bg-teal-dark text-white ring-2 ring-teal-brand/30 shadow-2xs" 
+                            : "bg-white text-secondary border border-black/[0.08] hover:bg-slate-50"
                         }`}
                       >
                         {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Style Picker */}
+                <div className="space-y-1 sm:col-span-2 pt-1 border-t border-black/[0.04]">
+                  <span className="text-[10px] font-bold text-secondary uppercase font-sans">
+                    Slide Deck Presentation Style (Google Slides Aesthetics)
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {SLIDE_STYLES.map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => handleStyleSelect(st.id)}
+                        className={`text-[10px] px-2.5 py-1 rounded-md font-sans font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          selectedStyle === st.id 
+                            ? "bg-teal-dark text-white ring-2 ring-teal-brand/30 shadow-2xs" 
+                            : "bg-white text-secondary border border-black/[0.08] hover:bg-slate-50"
+                        }`}
+                        title={st.desc}
+                      >
+                        <span className="flex items-center gap-0.5">
+                          {st.previewDots.map((dot, dIdx) => (
+                            <span key={dIdx} className="w-2 h-2 rounded-full border border-black/10 inline-block" style={{ backgroundColor: dot }} />
+                          ))}
+                        </span>
+                        <span>{st.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1690,8 +1706,7 @@ export default function App() {
               <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl font-sans shrink-0 max-w-fit">
                 {[
                   { id: "slides", label: "Interactive Slides", icon: Layers },
-                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
-                  { id: "googleSlides", label: "Google Slides", icon: Presentation }
+                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const isSelected = activeTab === tab.id;
@@ -1867,6 +1882,8 @@ export default function App() {
                       stopSpeaking={stopSpeaking}
                       isSpeaking={isSpeaking}
                       formatBionicText={formatBionicText}
+                      selectedStyle={selectedStyle}
+                      onStyleChange={handleStyleSelect}
                     />
 
                     {/* Scientific learning pillars */}
@@ -2122,152 +2139,6 @@ export default function App() {
                         </div>
                       )}
 
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* TAB: Google Slides */}
-                {activeTab === "googleSlides" && (
-                  <motion.div
-                    key="tab-googleslides-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-6 animate-fade-in w-full"
-                  >
-                    <div className="bg-white border border-black/[0.08] rounded-3xl p-6 sm:p-8 shadow-md space-y-6">
-                      <div className="flex items-start justify-between gap-4 border-b border-black/[0.06] pb-4">
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-mono font-bold text-teal-brand uppercase tracking-wider block">
-                            Google Workspace Integration
-                          </span>
-                          <h4 className="text-lg font-bold font-sans text-teal-dark">
-                            Google Slides Educator Presentation
-                          </h4>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-200">
-                          <Presentation className="w-5 h-5" />
-                        </div>
-                      </div>
-
-                      {!user ? (
-                        <div className="text-center py-8 space-y-4 max-w-md mx-auto">
-                          <div className="w-12 h-12 rounded-full bg-slate-50 border border-black/[0.06] flex items-center justify-center text-slate-400 mx-auto">
-                            <LogIn className="w-6 h-6" />
-                          </div>
-                          <h5 className="font-bold text-slate-800">Sign In Required</h5>
-                          <p className="text-xs text-secondary leading-relaxed">
-                            To create, sync, and present your lessons as real Google Slides, please sign in with your educator Google account.
-                          </p>
-                          <button
-                            onClick={signInWithGoogle}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-dark hover:bg-opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                          >
-                            <LogIn className="w-4 h-4 text-teal-brand" />
-                            <span>Sign In with Google</span>
-                          </button>
-                        </div>
-                      ) : !lesson.googleSlides ? (
-                        <div className="text-center py-8 space-y-5 max-w-lg mx-auto">
-                          <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-brand mx-auto shadow-sm">
-                            <Sparkles className="w-8 h-8" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <h5 className="font-bold text-slate-800 text-sm">Export "{lesson.lessonTitle}" to Google Slides</h5>
-                            <p className="text-xs text-secondary leading-relaxed max-w-sm mx-auto font-sans">
-                              Our intelligent educator assistant will generate a fully custom, high-impact slideshow including overview slides, core concepts, hands-on activities, and Jeopardy quiz slides directly in your Google Drive.
-                            </p>
-                          </div>
-
-                          {exportError && (
-                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-left font-sans flex items-start gap-2 max-w-md mx-auto">
-                              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                              <span>{exportError}</span>
-                            </div>
-                          )}
-
-                          <button
-                            onClick={handleExportToGoogleSlides}
-                            disabled={isExportingSlides}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-brand hover:bg-teal-mid text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
-                          >
-                            {isExportingSlides ? (
-                              <>
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                                <span>Generating Google Slides...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Presentation className="w-4 h-4 text-teal-dark" />
-                                <span>Create Google Slides Presentation</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          <div className="p-4 bg-teal-brand/5 border border-teal-brand/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
-                                <Check className="w-3 h-3" /> Exported to Google Slides
-                              </span>
-                              <h5 className="text-sm font-bold text-slate-800 font-sans mt-1">
-                                {lesson.lessonTitle}
-                              </h5>
-                              <p className="text-xs text-secondary font-mono truncate max-w-[280px] sm:max-w-xs">
-                                Presentation ID: {lesson.googleSlides.presentationId}
-                              </p>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              <a
-                                href={lesson.googleSlides.presentationUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-dark hover:bg-opacity-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                              >
-                                <span>Open Slideshow</span>
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                              <button
-                                onClick={handleExportToGoogleSlides}
-                                disabled={isExportingSlides}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-black/10 hover:bg-black/5 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                              >
-                                <RefreshCw className={`w-3.5 h-3.5 ${isExportingSlides ? "animate-spin" : ""}`} />
-                                <span>Re-export / Update</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {exportError && (
-                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-left font-sans flex items-start gap-2">
-                              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                              <span>{exportError}</span>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-secondary block font-sans">
-                              Live Interactive Slide Preview
-                            </label>
-                            <div className="relative border border-black/[0.08] rounded-2xl overflow-hidden shadow-inner aspect-video bg-slate-900 w-full">
-                              <iframe
-                                src={lesson.googleSlides.embedUrl}
-                                width="100%"
-                                height="100%"
-                                allowFullScreen={true}
-                                title="Google Slides Preview"
-                                className="absolute inset-0 w-full h-full border-0"
-                              />
-                            </div>
-                            <span className="text-[10px] text-secondary leading-normal block font-sans text-center mt-1">
-                              Pro Tip: You can share or edit this Google Slides deck directly inside your Google Drive or open it in full screen to present with live educator tools!
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                 )}

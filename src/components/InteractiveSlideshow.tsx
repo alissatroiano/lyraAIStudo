@@ -15,9 +15,11 @@ import {
   VolumeX,
   ExternalLink,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Palette
 } from "lucide-react";
 import { Slide } from "../types";
+import { SLIDE_STYLES, SlideStyle } from "../lib/slideStyles";
 
 interface InteractiveSlideshowProps {
   slides: Slide[];
@@ -30,6 +32,8 @@ interface InteractiveSlideshowProps {
   stopSpeaking: () => void;
   isSpeaking: boolean;
   formatBionicText: (text: string) => React.ReactNode;
+  selectedStyle?: string;
+  onStyleChange?: (styleId: string) => void;
 }
 
 export default function InteractiveSlideshow({ 
@@ -42,12 +46,23 @@ export default function InteractiveSlideshow({
   speakText,
   stopSpeaking,
   isSpeaking,
-  formatBionicText
+  formatBionicText,
+  selectedStyle,
+  onStyleChange
 }: InteractiveSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [isLocalFullscreen, setIsLocalFullscreen] = useState(false);
+  const [activeStyleId, setActiveStyleId] = useState<string>(selectedStyle || "Modern STEM");
+
+  React.useEffect(() => {
+    if (selectedStyle) {
+      setActiveStyleId(selectedStyle);
+    }
+  }, [selectedStyle]);
+
+  const currentStyleObj: SlideStyle = SLIDE_STYLES.find(s => s.id === activeStyleId) || SLIDE_STYLES[0];
   
   const rulerRef = React.useRef<HTMLDivElement>(null);
   const slideshowContainerRef = React.useRef<HTMLDivElement>(null);
@@ -129,15 +144,16 @@ export default function InteractiveSlideshow({
         : antiGlare === "mint"
           ? "bg-[#E6F4F1] border-[#C8E4DD] text-[#133835]"
           : "bg-[#FAF0E6] border-[#E6D5C3] text-[#4A2E1B]"
-      : "bg-gradient-to-br from-slate-900 via-teal-dark to-slate-950 text-white border-slate-800",
+      : currentStyleObj.bgClass,
     
-    title: isLightBackground ? "text-teal-950" : "text-white",
-    pointText: isLightBackground ? "text-slate-900 font-medium" : "text-slate-100",
+    title: isLightBackground ? "text-teal-950" : currentStyleObj.headerColor,
+    pointText: isLightBackground ? "text-slate-900 font-medium" : currentStyleObj.pointColor,
     bulletNum: isLightBackground
       ? "bg-teal-dark text-white border-teal-900/10"
-      : "bg-teal-brand/20 text-teal-brand border-teal-brand/30",
+      : currentStyleObj.bulletClass,
     caption: isLightBackground ? "text-[#5a4c3a]" : "text-slate-400",
-    border: isLightBackground ? "border-black/5" : "border-white/10",
+    border: isLightBackground ? "border-black/5" : currentStyleObj.borderClass,
+    badge: currentStyleObj.badgeClass,
   };
 
   if (isLocalFullscreen) {
@@ -272,7 +288,40 @@ export default function InteractiveSlideshow({
   }
 
   return (
-    <div className="space-y-6" id="interactive-slides-container">
+    <div className="space-y-4" id="interactive-slides-container">
+      {/* Slide Deck Style Picker Bar */}
+      <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-teal-dark font-sans shrink-0">
+          <Palette className="w-4 h-4 text-teal-brand" />
+          <span>Slide Deck Style Picker:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SLIDE_STYLES.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              onClick={() => {
+                setActiveStyleId(st.id);
+                if (onStyleChange) onStyleChange(st.id);
+              }}
+              className={`text-[10px] px-2.5 py-1 rounded-lg font-sans font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeStyleId === st.id
+                  ? "bg-teal-dark text-white shadow-3xs ring-2 ring-teal-brand/30"
+                  : "bg-white text-secondary border border-black/[0.08] hover:bg-slate-50"
+              }`}
+              title={st.desc}
+            >
+              <span className="flex items-center gap-0.5">
+                {st.previewDots.map((dot, dIdx) => (
+                  <span key={dIdx} className="w-2 h-2 rounded-full border border-black/10 inline-block" style={{ backgroundColor: dot }} />
+                ))}
+              </span>
+              <span>{st.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Upper header controls */}
       <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -282,8 +331,8 @@ export default function InteractiveSlideshow({
           <div className="space-y-0.5 text-left">
             <h4 className="text-sm font-bold text-teal-dark font-sans flex items-center gap-1.5">
               <span>Smartboard Interactive Presentation</span>
-              <span className="text-[10px] bg-amber-100 border border-amber-200 text-amber-800 font-bold px-2 py-0.5 rounded-full uppercase">
-                Dyslexia Friendly
+              <span className={`text-[10px] border font-bold px-2 py-0.5 rounded-full uppercase ${themeStyles.badge}`}>
+                {currentStyleObj.label} Style
               </span>
             </h4>
             <p className="text-xs text-secondary font-sans leading-none">
@@ -363,6 +412,7 @@ export default function InteractiveSlideshow({
       <div 
         ref={rulerRef}
         onMouseMove={handleMouseMove}
+        style={{ fontFamily: currentStyleObj.fontFamily }}
         className={`relative overflow-hidden border rounded-3xl shadow-xl min-h-[380px] flex flex-col justify-between p-6 sm:p-8 transition-all duration-300 ${themeStyles.container}`}
       >
         {/* Anti-glare and dyslexia focus guide rulers */}
