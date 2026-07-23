@@ -62,6 +62,11 @@ export default function InteractiveSlideshow({
     }
   }, [selectedStyle]);
 
+  // Reset slide index whenever slides array changes or new slidedeck is loaded
+  React.useEffect(() => {
+    setCurrentIndex(0);
+  }, [slides]);
+
   const currentStyleObj: SlideStyle = SLIDE_STYLES.find(s => s.id === activeStyleId) || SLIDE_STYLES[0];
   
   const rulerRef = React.useRef<HTMLDivElement>(null);
@@ -100,7 +105,8 @@ export default function InteractiveSlideshow({
     );
   }
 
-  const currentSlide = slides[currentIndex];
+  const safeIndex = currentIndex >= slides.length ? 0 : currentIndex;
+  const currentSlide = slides[safeIndex] || slides[0];
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);

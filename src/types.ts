@@ -68,6 +68,15 @@ export interface GamificationBreakdown {
   groundingSources?: GroundingSource[];
 }
 
+export interface GeneratedVisual {
+  id: string;
+  title: string;
+  imageUrl: string;
+  prompt: string;
+  style: string;
+  timestamp: number;
+}
+
 export interface GamifiedVideoPackage {
   gamificationBreakdown: GamificationBreakdown;
   cutsceneConcept: VideoConcept;
@@ -86,6 +95,7 @@ export interface ProcessedLesson {
   mediaRecommendations: MediaRecommendation[];
   extractedStyleNotes?: string;
   gamifiedVideoPackage?: GamifiedVideoPackage;
+  generatedVisuals?: GeneratedVisual[];
 }
 
 export interface PreloadedLesson {

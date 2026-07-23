@@ -52,7 +52,7 @@ import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
 import HandsOnLabView from "./components/HandsOnLabView";
-import GamifiedVideoStudio from "./components/GamifiedVideoStudio";
+import NanaBananaStudio from "./components/NanaBananaStudio";
 import { SLIDE_STYLES } from "./lib/slideStyles";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -190,23 +190,75 @@ export default function App() {
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   
+  // Helper to load initial active lesson from localStorage if available
+  const getInitialActiveLesson = (): ProcessedLesson => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("active_lesson");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.lessonTitle) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse stored active_lesson:", e);
+      }
+    }
+    return INITIAL_PROCESSED_LESSON;
+  };
+
   // App states
-  const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
+  const [lesson, setLesson] = useState<ProcessedLesson>(getInitialActiveLesson);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"slides" | "lab" | "quiz" | "gamify">("slides");
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
-  // Synchronize the current active lesson to localStorage for presentation popup windows
+  // Synchronize the current active lesson to localStorage for presentation popup windows (only from main app window)
   useEffect(() => {
-    if (lesson && lesson.lessonTitle && lesson.lessonTitle !== "Untitled STEM Lesson") {
+    if (lesson && currentRoute !== "presentation") {
       try {
         localStorage.setItem("active_lesson", JSON.stringify(lesson));
+        localStorage.setItem("active_lesson_timestamp", Date.now().toString());
       } catch (err) {
         console.error("Failed to sync active lesson to localStorage:", err);
       }
     }
-  }, [lesson]);
+  }, [lesson, currentRoute]);
+
+  const [presentationLessonState, setPresentationLessonState] = useState<ProcessedLesson | null>(null);
+
+  useEffect(() => {
+    const loadFromStorage = () => {
+      try {
+        const raw = localStorage.getItem("active_lesson");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.lessonTitle) {
+            setPresentationLessonState(parsed);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse presentation lesson from storage:", err);
+      }
+    };
+
+    if (currentRoute === "presentation") {
+      loadFromStorage();
+      const handleStorage = (e: StorageEvent) => {
+        if (e.key === "active_lesson" || e.key === "active_lesson_timestamp") {
+          loadFromStorage();
+        }
+      };
+      window.addEventListener("storage", handleStorage);
+      const interval = setInterval(loadFromStorage, 1000);
+      return () => {
+        window.removeEventListener("storage", handleStorage);
+        clearInterval(interval);
+      };
+    }
+  }, [currentRoute]);
 
   // Dyslexia & Neurodiverse Assistive states
   const [dyslexiaMode, setDyslexiaMode] = useState<boolean>(false);
@@ -936,13 +988,15 @@ export default function App() {
   const isLightBackground = antiGlare !== "none";
 
   if (currentRoute === "presentation") {
-    const savedLessonRaw = localStorage.getItem("active_lesson");
-    let presentationLesson = lesson;
-    if (savedLessonRaw) {
-      try {
-        presentationLesson = JSON.parse(savedLessonRaw);
-      } catch (e) {
-        console.error("Failed to parse active lesson:", e);
+    let presentationLesson = presentationLessonState || lesson;
+    if (!presentationLessonState) {
+      const savedLessonRaw = localStorage.getItem("active_lesson");
+      if (savedLessonRaw) {
+        try {
+          presentationLesson = JSON.parse(savedLessonRaw);
+        } catch (e) {
+          console.error("Failed to parse active lesson:", e);
+        }
       }
     }
     
@@ -1722,7 +1776,7 @@ export default function App() {
                   { id: "slides", label: "Interactive Slides", icon: Layers },
                   { id: "lab", label: "Hands-On Lab", icon: Flame },
                   { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
-                  { id: "gamify", label: "Gamified Video Studio", icon: Gamepad2 }
+                  { id: "gamify", label: "Nana Banana Pro Studio", icon: Sparkles }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const isSelected = activeTab === tab.id;
@@ -2189,12 +2243,12 @@ export default function App() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.25 }}
                   >
-                    <GamifiedVideoStudio
+                    <NanaBananaStudio
                       lesson={lesson}
-                      onUpdateGamifiedPackage={(pkg) => {
+                      onAddVisual={(visual) => {
                         setLesson((prev) => ({
                           ...prev,
-                          gamifiedVideoPackage: pkg
+                          generatedVisuals: [visual, ...(prev.generatedVisuals || [])]
                         }));
                       }}
                       dyslexiaMode={dyslexiaMode}

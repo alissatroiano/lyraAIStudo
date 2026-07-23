@@ -413,6 +413,110 @@ Perform Google Search research for current gaming trends & cartoon tropes for ki
   }
 });
 
+// API endpoint to generate high-definition experiment and lesson visuals using Nana Banana Pro (gemini-3-pro-image)
+app.post("/api/generate-visual", async (req, res) => {
+  if (!ai) {
+    return res.status(500).json({
+      error: "Gemini client not initialized. Please ensure GEMINI_API_KEY is configured."
+    });
+  }
+  const { prompt, aspectRatio = "16:9", imageSize = "1K", style = "hands_on_experiment" } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ error: "prompt is required" });
+  }
+
+  try {
+    let enhancedPrompt = prompt;
+    if (style === "hands_on_experiment") {
+      enhancedPrompt = `A clear, vivid, educational visual for a kids STEM hands-on experiment showing: ${prompt}. High clarity, realistic classroom setup, bright natural lighting, labeled equipment, highly engaging for students.`;
+    } else if (style === "diagram") {
+      enhancedPrompt = `A high-definition educational STEM diagram illustrating: ${prompt}. Clean labels, infographic style, colorful, easy to understand for students.`;
+    } else if (style === "vocabulary_card") {
+      enhancedPrompt = `A fun, vibrant educational vocabulary illustration for: ${prompt}. Bold cartoon-inspired visuals, clear subject focus, friendly classroom art.`;
+    } else if (style === "step_by_step") {
+      enhancedPrompt = `A step-by-step experiment guide illustration showing: ${prompt}. Clear action, safety gear, hands-on materials, highly detailed.`;
+    } else if (style === "custom") {
+      enhancedPrompt = `${prompt}. High-definition educational classroom presentation style.`;
+    }
+
+    console.log(`Generating visual with Nana Banana Pro model for: "${enhancedPrompt}"`);
+
+    let imageUrl: string | null = null;
+    let textDescription = "";
+
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-image',
+        contents: {
+          parts: [{ text: enhancedPrompt }]
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: imageSize
+          }
+        }
+      });
+
+      if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData) {
+            const base64EncodeString: string = part.inlineData.data;
+            imageUrl = `data:image/png;base64,${base64EncodeString}`;
+          } else if (part.text) {
+            textDescription += part.text;
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn("gemini-3-pro-image call attempt failed, attempting gemini-3.1-flash-image fallback:", e?.message);
+    }
+
+    if (!imageUrl) {
+      // Fallback model
+      const fallbackResponse = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-image',
+        contents: {
+          parts: [{ text: enhancedPrompt }]
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: "1K"
+          }
+        }
+      });
+
+      if (fallbackResponse.candidates?.[0]?.content?.parts) {
+        for (const part of fallbackResponse.candidates[0].content.parts) {
+          if (part.inlineData) {
+            const base64EncodeString: string = part.inlineData.data;
+            imageUrl = `data:image/png;base64,${base64EncodeString}`;
+          } else if (part.text) {
+            textDescription += part.text;
+          }
+        }
+      }
+    }
+
+    if (!imageUrl) {
+      return res.status(500).json({ error: "No visual image returned from Nana Banana Pro model." });
+    }
+
+    res.json({
+      imageUrl,
+      textDescription,
+      prompt: enhancedPrompt
+    });
+  } catch (error: any) {
+    console.error("Nana Banana Pro visual generation error:", error);
+    res.status(500).json({
+      error: "Failed to generate visual with Nana Banana Pro.",
+      details: error?.message || String(error)
+    });
+  }
+});
+
 // API endpoint to initiate Veo video generation
 app.post("/api/generate-video", async (req, res) => {
   if (!ai) {
