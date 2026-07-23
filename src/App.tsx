@@ -43,7 +43,8 @@ import {
   Save,
   Volume2,
   VolumeX,
-  Flame
+  Flame,
+  Gamepad2
 } from "lucide-react";
 import { PRELOADED_LESSONS } from "./data/preloadedLessons";
 import { INITIAL_PROCESSED_LESSON } from "./data/initialProcessedLesson";
@@ -51,8 +52,7 @@ import { ProcessedLesson, PreloadedLesson } from "./types";
 import { useFirebase } from "./context/FirebaseContext";
 import InteractiveSlideshow from "./components/InteractiveSlideshow";
 import HandsOnLabView from "./components/HandsOnLabView";
-import WorksheetView from "./components/WorksheetView";
-import CoTeacherView from "./components/CoTeacherView";
+import GamifiedVideoStudio from "./components/GamifiedVideoStudio";
 import { SLIDE_STYLES } from "./lib/slideStyles";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -194,7 +194,7 @@ export default function App() {
   const [lesson, setLesson] = useState<ProcessedLesson>(INITIAL_PROCESSED_LESSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"slides" | "coteacher" | "lab" | "worksheet" | "quiz">("slides");
+  const [activeTab, setActiveTab] = useState<"slides" | "lab" | "quiz" | "gamify">("slides");
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // Synchronize the current active lesson to localStorage for presentation popup windows
@@ -1720,10 +1720,9 @@ export default function App() {
               <div className="flex border border-black/[0.06] overflow-x-auto gap-1 bg-surface-0 p-1.5 rounded-xl font-sans shrink-0 max-w-fit">
                 {[
                   { id: "slides", label: "Interactive Slides", icon: Layers },
-                  { id: "coteacher", label: "Lyra AI Co-Teacher", icon: Sparkles },
                   { id: "lab", label: "Hands-On Lab", icon: Flame },
-                  { id: "worksheet", label: "Printable Worksheet", icon: FileText },
-                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle }
+                  { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
+                  { id: "gamify", label: "Gamified Video Studio", icon: Gamepad2 }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const isSelected = activeTab === tab.id;
@@ -1946,25 +1945,6 @@ export default function App() {
                   </motion.div>
                 )}
 
-                {/* TAB: Lyra AI Co-Teacher */}
-                {activeTab === "coteacher" && (
-                  <motion.div
-                    key="tab-coteacher-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <CoTeacherView 
-                      lesson={lesson} 
-                      dyslexiaMode={dyslexiaMode}
-                      bionicReading={bionicReading}
-                      formatBionicText={formatBionicText}
-                      speakText={speakText}
-                    />
-                  </motion.div>
-                )}
-
                 {/* TAB: Hands-On Lab */}
                 {activeTab === "lab" && (
                   <motion.div
@@ -1986,25 +1966,6 @@ export default function App() {
                       speakText={speakText}
                       stopSpeaking={stopSpeaking}
                       isSpeaking={isSpeaking}
-                    />
-                  </motion.div>
-                )}
-
-                {/* TAB: Printable Worksheet */}
-                {activeTab === "worksheet" && (
-                  <motion.div
-                    key="tab-worksheet-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <WorksheetView 
-                      worksheet={lesson.worksheet}
-                      lessonTitle={lesson.lessonTitle}
-                      dyslexiaMode={dyslexiaMode}
-                      bionicReading={bionicReading}
-                      formatBionicText={formatBionicText}
                     />
                   </motion.div>
                 )}
@@ -2217,6 +2178,32 @@ export default function App() {
                       )}
 
                     </div>
+                  </motion.div>
+                )}
+
+                {activeTab === "gamify" && (
+                  <motion.div
+                    key="tab-gamify-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <GamifiedVideoStudio
+                      lesson={lesson}
+                      onUpdateGamifiedPackage={(pkg) => {
+                        setLesson((prev) => ({
+                          ...prev,
+                          gamifiedVideoPackage: pkg
+                        }));
+                      }}
+                      dyslexiaMode={dyslexiaMode}
+                      bionicReading={bionicReading}
+                      formatBionicText={formatBionicText}
+                      speakText={speakText}
+                      stopSpeaking={stopSpeaking}
+                      isSpeaking={isSpeaking}
+                    />
                   </motion.div>
                 )}
 

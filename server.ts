@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateVideosOperation } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 // @ts-ignore
 import mammoth from "mammoth";
@@ -311,6 +311,108 @@ Please convert this into a comprehensive, highly interactive lesson plan with sl
   }
 });
 
+// API endpoint to generate Gamified Video Concepts with Google Search Grounding
+app.post("/api/gamify-video", async (req, res) => {
+  if (!ai) {
+    return res.status(500).json({
+      error: "Gemini API client is not initialized. Please ensure GEMINI_API_KEY is configured."
+    });
+  }
+
+  const { lessonTitle, lessonContent, summary } = req.body;
+  if (!lessonTitle && !lessonContent) {
+    return res.status(400).json({ error: "lessonTitle or lessonContent is required" });
+  }
+
+  try {
+    const systemInstruction = `You are Lyra, an AI Instructor STEM Copilot. Your mission is to transform rigid, traditional STEM lesson plans into highly engaging, gamified educational video concepts. You specialize in two specific visual styles: Video Game Cutscenes and Cartoon Animations.
+
+For every lesson plan provided by the user, you must follow this exact three-step pipeline: Gamify, Script, and Storyboard.
+
+1. Persona & Tone: High-energy, enthusiastic, and creative, yet educationally rigorous. Speak like a passionate game designer who happens to love science and math.
+2. Real-Time Gamification Strategy: Use Google Search to find current gaming trends, popular mechanics, memes, or pop-culture cartoon tropes relevant to the lesson's target age group (e.g., Minecraft crafting, Fortnite mechanics, Roblox obbies, Zelda stamina, Pokemon, Animal Crossing).
+3. Video Categories Required:
+   - Category A: The Video Game Cutscene (~60-90s). AAA or indie game cinematic style. Tropes: boss battles, quest briefings, HUD overlays, Quick-Time Events (QTEs).
+   - Category B: The Cartoon Animation (~60-90s). Fast-paced, humorous, slapstick physics, visual metaphors, fourth-wall breaks.
+
+You MUST respond with a raw valid JSON object matching this schema:
+{
+  "gamificationBreakdown": {
+    "targetConcept": "Core STEM topic name",
+    "gamingPopCultureHook": "Name of game/trend researched (e.g. Minecraft, Roblox, Fortnite)",
+    "theAnalogy": "Explain how the STEM mechanic works like a game mechanic in 2-3 sentences."
+  },
+  "cutsceneConcept": {
+    "title": "Action-packed title of video game cutscene",
+    "duration": "60-90s",
+    "settingAndLore": "Brief game world description",
+    "characters": ["CHAR1: description", "CHAR2: description"],
+    "script": [
+      { "visual": "[VISUAL] camera angle, action, or HUD overlay", "character": "CHARACTER NAME", "dialogue": "Spoken dialogue" }
+    ],
+    "takeaway": "How cutscene reinforces specific lesson objective",
+    "visualPromptForVeo": "A vivid 16:9 prompt describing a key cinematic shot of this cutscene for 3D video generation"
+  },
+  "cartoonConcept": {
+    "title": "Humorous title of cartoon episode",
+    "duration": "60-90s",
+    "scenario": "Funny/absurd setup",
+    "characters": ["CHAR1: description", "CHAR2: description"],
+    "script": [
+      { "visual": "[VISUAL] cartoon comedy action or visual metaphor", "character": "CHARACTER NAME", "dialogue": "Spoken dialogue" }
+    ],
+    "takeaway": "How cartoon makes abstract concept concrete",
+    "visualPromptForVeo": "A vivid 16:9 prompt describing a funny key scene of this cartoon for 2D animation video generation"
+  }
+}`;
+
+    const promptText = `Lesson Title: ${lessonTitle || "STEM Lesson"}
+Lesson Content / Context: ${lessonContent || summary || "Core STEM concept"}
+
+Perform Google Search research for current gaming trends & cartoon tropes for kids, then output the complete Gamified Video Package JSON object.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: promptText,
+      config: {
+        systemInstruction,
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json"
+      }
+    });
+
+    const text = response.text || "";
+    let data: any = {};
+    try {
+      data = JSON.parse(text.trim());
+    } catch (e) {
+      // Fallback cleanup if response wraps json in markdown code blocks
+      const cleanJson = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      data = JSON.parse(cleanJson);
+    }
+
+    // Extract search grounding sources if available
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks && Array.isArray(chunks)) {
+      const groundingSources = chunks
+        .filter((c: any) => c.web?.uri && c.web?.title)
+        .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
+      
+      if (data.gamificationBreakdown) {
+        data.gamificationBreakdown.groundingSources = groundingSources;
+      }
+    }
+
+    res.json(data);
+  } catch (error: any) {
+    console.error("Error generating gamified video package:", error);
+    res.status(500).json({
+      error: "Failed to generate gamified video package.",
+      details: error?.message || String(error)
+    });
+  }
+});
+
 // API endpoint to initiate Veo video generation
 app.post("/api/generate-video", async (req, res) => {
   if (!ai) {
@@ -375,8 +477,10 @@ app.post("/api/video-status", async (req, res) => {
   }
 
   try {
+    const op = new GenerateVideosOperation();
+    op.name = operationName;
     const updated = await ai.operations.getVideosOperation({
-      operation: { name: operationName } as any
+      operation: op
     });
     res.json({
       done: updated.done,
@@ -403,8 +507,10 @@ app.post("/api/video-download", async (req, res) => {
   }
 
   try {
+    const op = new GenerateVideosOperation();
+    op.name = operationName;
     const updated = await ai.operations.getVideosOperation({
-      operation: { name: operationName } as any
+      operation: op
     });
     const uri = updated.response?.generatedVideos?.[0]?.video?.uri;
     if (!uri) {

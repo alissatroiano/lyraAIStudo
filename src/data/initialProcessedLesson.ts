@@ -158,5 +158,50 @@ export const INITIAL_PROCESSED_LESSON: ProcessedLesson = {
       suggestedSearchQuery: "PhET Balloon Rocket Simulation physics html5",
       whyItHelps: "A high-quality interactive virtual simulation that allows kids to change rocket mass, thrust, and angle on a digital smart-board if physical materials are limited."
     }
-  ]
+  ],
+  gamifiedVideoPackage: {
+    gamificationBreakdown: {
+      targetConcept: "Rocket Science & Newton's 3rd Law (Thrust & Momentum)",
+      gamingPopCultureHook: "Kerbal Space Program & Fortnite Launch Pad Mechanics",
+      theAnalogy: "Just like crouching and jumping on a Fortnite Launch Pad exerts force downward to catapult your avatar skyward, a rocket expels superheated exhaust gas downward to propel the heavy hull upward into orbit!",
+      groundingSources: [
+        { title: "Kerbal Space Program Propulsion Physics Guide", uri: "https://www.kerbalspaceprogram.com" },
+        { title: "Fortnite Launch Pad Velocity & Physics Mechanics", uri: "https://www.epicgames.com/fortnite" }
+      ]
+    },
+    cutsceneConcept: {
+      title: "Operation Orbital Escape: The Thruster Crisis",
+      duration: "75s",
+      settingAndLore: "Deep space orbit surrounding Sector-7. Captain Nova's exploration vessel is stuck in a gravitational orbit trap with zero fuel remaining except for auxiliary plasma canisters.",
+      characters: [
+        "CAPTAIN NOVA: Ace space explorer and tactical engineer.",
+        "A.I. ZAX: The ship's witty holographic flight computer."
+      ],
+      script: [
+        { visual: "[VISUAL] Dramatic 3D camera pan around a sleek titanium starship trapped near a glowing purple singularity. Red warning lights flash on the cockpit HUD overlay.", character: "A.I. ZAX", dialogue: "Warning Captain! Gravitational pull increasing by 14% per second! Auxiliary engines offline." },
+        { visual: "[VISUAL] Close-up on Captain Nova pulling a glowing blue plasma canisters lever. Quick-Time Event (QTE) prompt appears on HUD: 'PRESS [SPACEBAR] TO EJECT PLASMA'.", character: "CAPTAIN NOVA", dialogue: "Zax, remember Newton's Third Law! We don't need air to push against—we just need MASS to throw backward!" },
+        { visual: "[VISUAL] Nova slams the button. The rear ventral exhaust ports blast a massive beam of hyper-dense plasma particles backward into the void.", character: "A.I. ZAX", dialogue: "Action force verified! 50,000 Newtons of rear thrust generated!" },
+        { visual: "[VISUAL] High-speed camera angle tracks the starship breaking free of the gravity trap, shooting forward into hyper-drive with glowing thruster trails.", character: "CAPTAIN NOVA", dialogue: "Equal and opposite reaction, baby! See you in orbit!" }
+      ],
+      takeaway: "Demonstrates that rockets fly in the vacuum of space by expelling mass (plasma/exhaust) backward, generating forward thrust without needing air to push against.",
+      visualPromptForVeo: "Cinematic sci-fi 3D game cutscene. A sleek silver spaceship trapped near a glowing purple nebula ejects a sudden burst of blue plasma thrusters from the rear, shooting forward through space. Unreal Engine 5 render style, dramatic lighting, 16:9 aspect ratio."
+    },
+    cartoonConcept: {
+      title: "Professor Pip & The Skateboard Cannon Catastrophe",
+      duration: "70s",
+      scenario: "A brightly colored cartoon science laboratory equipped with oversized treadmills, giant rubber bands, and an indoor skate park.",
+      characters: [
+        "PROFESSOR PIP: Energetic eccentric scientist with wild blue hair.",
+        "SQUEAKS: Pip's sassy hamster assistant wearing safety goggles."
+      ],
+      script: [
+        { visual: "[VISUAL] Bright 2D cartoon animation. Professor Pip stands on a skateboard holding a massive watermelon cannon labeled 'NO EXCUSES 9000'.", character: "PROFESSOR PIP", dialogue: "Behold Squeaks! I will prove Newton's 3rd Law using pure fruit propulsion!" },
+        { visual: "[VISUAL] Squeaks covers his eyes with his tiny hamster paws and holds up a sign reading 'INCOMING DAMAGE'.", character: "SQUEAKS", dialogue: "(Squeaks nervously points at Pip's feet on the skateboard wheels)" },
+        { visual: "[VISUAL] PIP pulls the trigger. BOOM! The cannon fires a giant watermelon to the LEFT. With cartoon slapstick physics, Pip and his skateboard shoot backwards to the RIGHT at top speed, crashing into a stack of cardboard boxes.", character: "PROFESSOR PIP", dialogue: "Woooahhh! The watermelon went LEFT, so I went RIGHT with equal force! Newton was right!" },
+        { visual: "[VISUAL] Pip pops out of the cardboard box with a slice of watermelon on his head and gives a thumbs-up as cartoon stars spin around him.", character: "PROFESSOR PIP", dialogue: "For every action, there's an equal and opposite reaction! Plus, free snack!" }
+      ],
+      takeaway: "Uses slapstick cartoon recoil physics to make Newton's Third Law memorable and intuitive.",
+      visualPromptForVeo: "Fun whimsical 2D cartoon animation. An eccentric scientist on a skateboard fires a giant watermelon cannon to the left, causing the scientist and skateboard to zoom rapidly backward to the right in slapstick fashion. Bright friendly colors, 16:9 aspect ratio."
+    }
+  }
 };

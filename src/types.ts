@@ -39,6 +39,41 @@ export interface MediaRecommendation {
   whyItHelps: string;
 }
 
+export interface ScriptLine {
+  visual?: string;
+  character?: string;
+  dialogue?: string;
+}
+
+export interface VideoConcept {
+  title: string;
+  duration: string;
+  settingAndLore?: string;
+  scenario?: string;
+  characters: string[];
+  script: ScriptLine[];
+  takeaway: string;
+  visualPromptForVeo?: string;
+}
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
+}
+
+export interface GamificationBreakdown {
+  targetConcept: string;
+  gamingPopCultureHook: string;
+  theAnalogy: string;
+  groundingSources?: GroundingSource[];
+}
+
+export interface GamifiedVideoPackage {
+  gamificationBreakdown: GamificationBreakdown;
+  cutsceneConcept: VideoConcept;
+  cartoonConcept: VideoConcept;
+}
+
 export interface ProcessedLesson {
   lessonTitle: string;
   duration: string;
@@ -50,6 +85,7 @@ export interface ProcessedLesson {
   quiz: QuizQuestion[];
   mediaRecommendations: MediaRecommendation[];
   extractedStyleNotes?: string;
+  gamifiedVideoPackage?: GamifiedVideoPackage;
 }
 
 export interface PreloadedLesson {
