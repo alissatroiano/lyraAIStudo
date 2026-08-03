@@ -73,11 +73,11 @@ const stripePromise = fetch("/api/stripe-config")
     return loadStripe("pk_live_51NcyntHSk9zSqYTt2S2OH75n7DKrXoTpkPTeGqZ9ndOrSAOOqGZEiLbNNKk449JQ0c2vFmWiZNeIm0o1HcdIs2qf00WRqNovyW");
   });
 
-// Lyra Logo Component using the uploaded logo image (lyra.png/logo.png)
-const LyraLogo = ({ className = "w-28 h-28" }: { className?: string }) => (
+// Snori Logo Component using the uploaded logo image (lyra.png/logo.png)
+const SnoriLogo = ({ className = "w-28 h-28" }: { className?: string }) => (
   <img 
     src="/lyra.png" 
-    alt="Lyra Learning Logo" 
+    alt="Snori Learning Logo" 
     className={`${className} object-contain rounded-xl`}
     referrerPolicy="no-referrer"
     onError={(e) => {
@@ -735,7 +735,7 @@ export default function App() {
             data.extractedStyleNotes
           );
         } catch (saveNotesErr) {
-          console.error("Autosaving Lyra's extracted style notes failed:", saveNotesErr);
+          console.error("Autosaving Snori's extracted style notes failed:", saveNotesErr);
         }
       }
 
@@ -1011,7 +1011,7 @@ export default function App() {
                 {presentationLesson.lessonTitle || "STEM Interactive Class Presentation"}
               </span>
               <p className="text-[10px] text-slate-400 font-sans tracking-wide">
-                Powered by Lyra Smartboard Presentation Engine
+                Powered by Snori Smartboard Presentation Engine
               </p>
             </div>
           </div>
@@ -1106,7 +1106,7 @@ export default function App() {
               </div>
               <div>
                 <span className="font-serif text-2xl font-semibold tracking-tight text-teal-dark">
-                  Lyra<span className="text-teal-brand font-sans">.</span>
+                  Snori<span className="text-teal-brand font-sans">.</span>
                 </span>
                 <p className="text-[10px] text-secondary font-sans tracking-wide leading-none">Afterschool STEM Copilot</p>
               </div>
@@ -1141,7 +1141,7 @@ export default function App() {
             </div>
             <div>
               <span className="font-serif text-2xl font-semibold tracking-tight text-teal-dark">
-                Lyra<span className="text-teal-brand font-sans">.</span>
+                Snori<span className="text-teal-brand font-sans">.</span>
               </span>
               <p className="text-[10px] text-secondary font-sans tracking-wide leading-none">Afterschool STEM Copilot</p>
             </div>
@@ -1206,13 +1206,13 @@ export default function App() {
                 Your AI copilot for <span className="text-teal-dark underline decoration-teal-brand/40 underline-offset-4">STEM lesson prep</span>
               </h1>
               <p className="text-sm text-secondary leading-relaxed font-sans font-normal">
-                Lyra turns long, messy science articles and PDF textbooks into beautiful interactive slide decks, hands-on lab guides, printable worksheets, and broken media link backups instantly.
+                Snori turns long, messy science articles and PDF textbooks into beautiful interactive slide decks, hands-on lab guides, printable worksheets, and broken media link backups instantly.
               </p>
             </div>
 
             {/* Mascot float wrap on the right */}
             <div className="self-center md:self-auto shrink-0 bg-teal-light/40 border border-teal-brand/10 rounded-2xl p-4 shadow-3xs animate-float">
-              <LyraLogo className="w-24 h-24 sm:w-28 sm:h-28" />
+              <SnoriLogo className="w-24 h-24 sm:w-28 sm:h-28" />
             </div>
           </div>
 
@@ -1543,13 +1543,13 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Lyra's Memory Profile & AI Insights */}
+                {/* Snori's Memory Profile & AI Insights */}
                 {user ? (
                   <div className="bg-teal-light/10 border border-teal-brand/15 rounded-xl p-3 space-y-1.5 animate-fadeIn">
                     <div className="flex items-center gap-1.5">
                       <Brain className="w-3.5 h-3.5 text-teal-brand animate-pulse" />
                       <span className="text-[9px] font-bold text-teal-dark uppercase tracking-wider font-sans">
-                        Lyra's Memory of You
+                        Snori's Memory of You
                       </span>
                     </div>
                     {profile?.instructorNotes ? (
@@ -1558,18 +1558,18 @@ export default function App() {
                           "I've learned that you focus on: <span className="font-semibold text-teal-dark">{profile.instructorNotes}</span>"
                         </p>
                         <span className="text-[8px] text-teal-brand font-medium block">
-                          💡 Lyra automatically synthesizes these pedagogical preferences into new plans.
+                          💡 Snori automatically synthesizes these pedagogical preferences into new plans.
                         </span>
                       </div>
                     ) : (
                       <p className="text-[9px] text-secondary/70 italic font-sans leading-normal">
-                        Generate a lesson to activate. Lyra will observe your input patterns and custom instructions to learn your style.
+                        Generate a lesson to activate. Snori will observe your input patterns and custom instructions to learn your style.
                       </p>
                     )}
                   </div>
                 ) : (
                   <div className="bg-amber-50/40 border border-amber-200/50 rounded-xl p-2.5 text-[9px] text-amber-950 leading-normal font-sans">
-                    🔒 <span className="font-bold">Sign In</span> to enable Lyra's adaptive memory. Lyra will save your instructions and learn your pedagogical style across sessions!
+                    🔒 <span className="font-bold">Sign In</span> to enable Snori's adaptive memory. Snori will save your instructions and learn your pedagogical style across sessions!
                   </div>
                 )}
               </div>
@@ -2271,7 +2271,7 @@ export default function App() {
 
         {/* Minimal professional footer */}
         <footer className="px-6 sm:px-8 pt-8 mt-auto border-t border-black/[0.05] text-center text-[10px] text-secondary font-sans leading-normal space-y-1">
-          <p>© 2026 Lyra STEM - Immersive Lesson Plan Transformation Suite. All rights reserved.</p>
+          <p>© 2026 Snori STEM - Immersive Lesson Plan Transformation Suite. All rights reserved.</p>
           <p className="text-[9px] text-secondary/75">Designed in partnership with XPRIZE Education Initiative for high-yield classroom activities.</p>
         </footer>
 

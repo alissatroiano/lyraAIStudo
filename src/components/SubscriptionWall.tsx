@@ -168,7 +168,7 @@ export const SubscriptionWall: React.FC<SubscriptionWallProps> = ({ user, onSucc
         <p className="text-sm text-secondary max-w-sm mb-4">
           Thank you for subscribing! Your account is upgraded to <strong>{plans[selectedPlan].name}</strong>.
         </p>
-        <p className="text-xs text-teal-brand font-medium">Unlocking Lyra STEM Engine...</p>
+        <p className="text-xs text-teal-brand font-medium">Unlocking Snori STEM Engine...</p>
       </div>
     );
   }
@@ -182,7 +182,7 @@ export const SubscriptionWall: React.FC<SubscriptionWallProps> = ({ user, onSucc
           <span>Instructor Membership</span>
         </div>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight">
-          Choose your plan to unlock <span className="text-teal-dark underline decoration-teal-brand/40 underline-offset-4">Lyra Copilot</span>
+          Choose your plan to unlock <span className="text-teal-dark underline decoration-teal-brand/40 underline-offset-4">Snori Copilot</span>
         </h2>
         <p className="text-sm text-secondary leading-relaxed">
           Transform wordy curriculum materials into immersive interactive presentations, slides, and hands-on laboratory lessons built for accessibility.

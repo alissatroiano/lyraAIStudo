@@ -325,7 +325,7 @@ app.post("/api/gamify-video", async (req, res) => {
   }
 
   try {
-    const systemInstruction = `You are Lyra, an AI Instructor STEM Copilot. Your mission is to transform rigid, traditional STEM lesson plans into highly engaging, gamified educational video concepts. You specialize in two specific visual styles: Video Game Cutscenes and Cartoon Animations.
+    const systemInstruction = `You are Snori, an AI Instructor STEM Copilot. Your mission is to transform rigid, traditional STEM lesson plans into highly engaging, gamified educational video concepts. You specialize in two specific visual styles: Video Game Cutscenes and Cartoon Animations.
 
 For every lesson plan provided by the user, you must follow this exact three-step pipeline: Gamify, Script, and Storyboard.
 

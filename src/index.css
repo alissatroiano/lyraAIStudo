@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: "Fraunces", Georgia, Cambria, serif;
+  --font-nocturne: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   --color-primary: #0f1117;
   --color-secondary: #5a6478;
@@ -20,6 +21,35 @@
 
   --color-gold-brand: #c97d10;
   --color-gold-light: #fef3c7;
+
+  /* Snori Nocturne dark theme palette */
+  --color-noct-bg: #161826;
+  --color-noct-bg-deep: #0e0f18;
+  --color-noct-surface: #232532;
+  --color-noct-border: #3f424d;
+  --color-noct-border-accent: #4c5397;
+  --color-noct-text: #e9e9ed;
+  --color-noct-accent: #9184d9;
+  --color-noct-accent-light: #b5abfc;
+  --color-noct-accent-pale: #d2cefd;
+  --color-noct-accent-ghost: #2b2741;
+  --color-noct-glow: #f3f5fe;
+}
+
+/* Light-mode override for the Nocturne palette. Wrap a component's root in
+   data-theme="light" to flip every noct-* utility back to a bright theme. */
+[data-theme="light"] {
+  --color-noct-bg: #f4f6fb;
+  --color-noct-bg-deep: #eef1f8;
+  --color-noct-surface: #ffffff;
+  --color-noct-border: rgba(15, 17, 23, 0.09);
+  --color-noct-border-accent: rgba(0, 194, 178, 0.35);
+  --color-noct-text: #0f1117;
+  --color-noct-accent: #00c2b2;
+  --color-noct-accent-light: #1a4a45;
+  --color-noct-accent-pale: #0f766e;
+  --color-noct-accent-ghost: #e0faf8;
+  --color-noct-glow: #ffffff;
 }
 
 /* Float animations for mascot and interactive cards */

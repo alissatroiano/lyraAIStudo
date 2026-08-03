@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Slide } from "../types";
 import { SLIDE_STYLES, SlideStyle } from "../lib/slideStyles";
+import { useNocturneTheme } from "../hooks/useNocturneTheme";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface InteractiveSlideshowProps {
   slides: Slide[];
@@ -55,6 +57,7 @@ export default function InteractiveSlideshow({
   const [showNotes, setShowNotes] = useState(true);
   const [isLocalFullscreen, setIsLocalFullscreen] = useState(false);
   const [activeStyleId, setActiveStyleId] = useState<string>(selectedStyle || "Modern STEM");
+  const { theme, toggleTheme } = useNocturneTheme();
 
   React.useEffect(() => {
     if (selectedStyle) {
@@ -294,11 +297,11 @@ export default function InteractiveSlideshow({
   }
 
   return (
-    <div className="space-y-4" id="interactive-slides-container">
+    <div data-theme={theme} className="space-y-4 font-nocturne" id="interactive-slides-container">
       {/* Slide Deck Style Picker Bar */}
-      <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-teal-dark font-sans shrink-0">
-          <Palette className="w-4 h-4 text-teal-brand" />
+      <div className="bg-noct-surface border border-noct-border/60 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-noct-accent-light shrink-0">
+          <Palette className="w-4 h-4 text-noct-accent" />
           <span>Slide Deck Style Picker:</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -310,10 +313,10 @@ export default function InteractiveSlideshow({
                 setActiveStyleId(st.id);
                 if (onStyleChange) onStyleChange(st.id);
               }}
-              className={`text-[10px] px-2.5 py-1 rounded-lg font-sans font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                 activeStyleId === st.id
-                  ? "bg-teal-dark text-white shadow-3xs ring-2 ring-teal-brand/30"
-                  : "bg-white text-secondary border border-black/[0.08] hover:bg-slate-50"
+                  ? "bg-noct-accent/15 text-noct-accent-light border-noct-accent"
+                  : "bg-transparent text-noct-text/70 border-noct-border/60 hover:bg-white/5"
               }`}
               title={st.desc}
             >
@@ -329,19 +332,19 @@ export default function InteractiveSlideshow({
       </div>
 
       {/* Upper header controls */}
-      <div className="bg-surface-0 border border-black/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+      <div className="bg-noct-surface border border-noct-border/60 rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center text-teal-brand border border-teal-brand/10 shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-noct-accent-ghost flex items-center justify-center text-noct-accent-light shrink-0">
             <Presentation className="w-5 h-5" />
           </div>
           <div className="space-y-0.5 text-left">
-            <h4 className="text-sm font-bold text-teal-dark font-sans flex items-center gap-1.5">
+            <h4 className="text-sm font-medium text-noct-text flex items-center gap-1.5">
               <span>Smartboard Interactive Presentation</span>
-              <span className={`text-[10px] border font-bold px-2 py-0.5 rounded-full uppercase ${themeStyles.badge}`}>
+              <span className="text-[10px] border border-noct-accent text-noct-accent font-medium px-2 py-0.5 rounded-full uppercase">
                 {currentStyleObj.label} Style
               </span>
             </h4>
-            <p className="text-xs text-secondary font-sans leading-none">
+            <p className="text-xs text-noct-text/50 leading-none">
               Slide {currentIndex + 1} of {slides.length} — Interactive whiteboard companion
             </p>
           </div>
@@ -352,10 +355,10 @@ export default function InteractiveSlideshow({
           <button
             type="button"
             onClick={() => speakText(`Slide ${currentIndex + 1}: ${currentSlide.title}. ` + currentSlide.content.join(" "), ttsSpeed)}
-            className={`p-2 rounded-lg text-xs font-bold font-sans transition-all flex items-center justify-center border cursor-pointer ${
+            className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center border cursor-pointer ${
               isSpeaking
-                ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                : "bg-white border-black/[0.08] text-teal-brand hover:bg-surface-0"
+                ? "bg-red-500/10 border-red-500/40 text-red-400 hover:bg-red-500/20"
+                : "bg-transparent border-noct-border/60 text-noct-accent hover:bg-white/5"
             }`}
             title={isSpeaking ? "Stop speech" : "Read entire slide aloud"}
           >
@@ -365,10 +368,10 @@ export default function InteractiveSlideshow({
           <button
             type="button"
             onClick={() => setShowNotes(!showNotes)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold font-sans transition-all flex items-center gap-1.5 border cursor-pointer ${
-              showNotes 
-                ? "bg-teal-brand text-white border-teal-brand" 
-                : "bg-white border-black/[0.08] text-secondary hover:bg-surface-0"
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer ${
+              showNotes
+                ? "bg-noct-accent/15 text-noct-accent-light border-noct-accent"
+                : "bg-transparent border-noct-border/60 text-noct-text hover:bg-white/5"
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -378,23 +381,23 @@ export default function InteractiveSlideshow({
           <button
             type="button"
             onClick={togglePlay}
-            className={`p-2 rounded-lg text-xs font-bold font-sans transition-all flex items-center justify-center border cursor-pointer ${
-              isPlaying 
-                ? "bg-teal-light text-teal-brand border-teal-brand/20" 
-                : "bg-white border-black/[0.08] text-secondary hover:bg-surface-0"
+            className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center border cursor-pointer ${
+              isPlaying
+                ? "bg-noct-accent/15 text-noct-accent-light border-noct-accent"
+                : "bg-transparent border-noct-border/60 text-noct-text hover:bg-white/5"
             }`}
             title={isPlaying ? "Pause Slideshow" : "Auto-Play Slides (7s)"}
           >
-            {isPlaying ? <Pause className="w-4 h-4 text-teal-brand" /> : <Play className="w-4 h-4 text-secondary" />}
+            {isPlaying ? <Pause className="w-4 h-4 text-noct-accent-light" /> : <Play className="w-4 h-4 text-noct-text" />}
           </button>
 
           <button
             type="button"
             onClick={() => setIsLocalFullscreen(true)}
-            className="px-3 py-1.5 bg-white border border-black/[0.08] text-teal-dark hover:bg-surface-0 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+            className="px-3 py-1.5 bg-transparent border border-noct-accent text-noct-accent hover:bg-noct-accent/10 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
             title="Present Fullscreen (Immersive Theater Mode)"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-teal-brand" />
+            <Maximize2 className="w-3.5 h-3.5" />
             <span>Present Fullscreen</span>
           </button>
 
@@ -404,13 +407,15 @@ export default function InteractiveSlideshow({
               onClick={() => {
                 window.open(window.location.origin + window.location.pathname + "?presentation=true", "_blank");
               }}
-              className="px-3 py-1.5 bg-teal-light text-teal-dark hover:bg-[#bbf7f2] border border-teal-brand/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+              className="px-3 py-1.5 bg-noct-accent/10 text-noct-accent-light hover:bg-noct-accent/20 border border-noct-accent/30 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
               title="Open dedicated slideshow in a new window"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-teal-brand" />
+              <ExternalLink className="w-3.5 h-3.5" />
               <span>Open in New Window</span>
             </button>
           )}
+
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </div>
 
@@ -448,8 +453,8 @@ export default function InteractiveSlideshow({
               }}
               className="h-1 flex-1 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 cursor-pointer transition-all hover:bg-black/20 dark:hover:bg-white/20"
             >
-              <div 
-                className={`h-full bg-teal-brand transition-all duration-300 ${
+              <div
+                className={`h-full bg-noct-accent transition-all duration-300 ${
                   idx === currentIndex ? "w-full" : idx < currentIndex ? "w-full opacity-40" : "w-0"
                 }`}
               />
@@ -469,7 +474,7 @@ export default function InteractiveSlideshow({
               className="space-y-6"
             >
               <div className="space-y-2">
-                <span className={`text-[10px] uppercase tracking-wider font-bold flex items-center gap-1.5 font-mono ${isLightBackground ? "text-teal-800" : "text-teal-brand"}`}>
+                <span className={`text-[10px] uppercase tracking-wider font-bold flex items-center gap-1.5 font-mono ${isLightBackground ? "text-teal-800" : "text-noct-accent-pale"}`}>
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>SLIDE {currentIndex + 1} DIRECTIVE</span>
                 </span>
@@ -559,7 +564,7 @@ export default function InteractiveSlideshow({
 
           <div className="text-right">
             <span className={`text-[10px] font-mono block uppercase ${themeStyles.caption}`}>Presenter Deck</span>
-            <span className="text-xs font-sans text-teal-brand font-bold">
+            <span className="text-xs text-noct-accent-pale font-medium">
               {currentIndex + 1} / {slides.length}
             </span>
           </div>
@@ -568,17 +573,17 @@ export default function InteractiveSlideshow({
 
       {/* Visual Concept Block */}
       {currentSlide.visualConcept && (
-        <div className="bg-slate-50 border border-black/[0.05] rounded-2xl p-5 space-y-3 shadow-3xs text-left" id="visual-concept-card">
-          <div className="flex items-center gap-2.5 text-teal-dark">
-            <div className="w-7 h-7 rounded-lg bg-teal-light flex items-center justify-center text-teal-brand">
+        <div className="bg-noct-surface border border-noct-border/60 rounded-2xl p-5 space-y-3 text-left" id="visual-concept-card">
+          <div className="flex items-center gap-2.5 text-noct-accent-light">
+            <div className="w-7 h-7 rounded-lg bg-noct-accent-ghost flex items-center justify-center text-noct-accent-light">
               <Eye className="w-4 h-4" />
             </div>
             <div>
-              <h5 className="text-xs font-bold uppercase font-sans tracking-tight">Smartboard Visual Concept</h5>
-              <p className="text-[9px] text-secondary leading-none">Suggested live illustration or board sketch</p>
+              <h5 className="text-xs font-semibold uppercase tracking-tight">Smartboard Visual Concept</h5>
+              <p className="text-[9px] text-noct-text/40 leading-none">Suggested live illustration or board sketch</p>
             </div>
           </div>
-          <p className="text-xs text-secondary leading-relaxed font-sans bg-white border border-black/[0.04] p-3 rounded-xl italic">
+          <p className="text-xs text-noct-text/65 leading-relaxed bg-noct-bg border border-noct-border/60 p-3 rounded-xl italic">
             "{currentSlide.visualConcept}"
           </p>
         </div>
@@ -594,17 +599,17 @@ export default function InteractiveSlideshow({
             className="overflow-hidden"
             id="instructor-notes-card"
           >
-            <div className="bg-amber-50/70 border border-amber-200/50 rounded-2xl p-5 space-y-3 text-left">
-              <div className="flex items-center gap-2.5 text-amber-900">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700">
+            <div className="bg-noct-surface border border-noct-border-accent/50 rounded-2xl p-5 space-y-3 text-left">
+              <div className="flex items-center gap-2.5 text-noct-accent-pale">
+                <div className="w-7 h-7 rounded-lg bg-noct-accent-ghost flex items-center justify-center text-noct-accent-pale">
                   <HelpCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold uppercase font-sans tracking-tight">Facilitator Cues & Speaking Prompts</h5>
-                  <p className="text-[9px] text-amber-800/80 leading-none">Pedagogical recommendations by Lyra</p>
+                  <h5 className="text-xs font-semibold uppercase tracking-tight">Facilitator Cues & Speaking Prompts</h5>
+                  <p className="text-[9px] text-noct-text/40 leading-none">Pedagogical recommendations by Snori</p>
                 </div>
               </div>
-              <p className="text-xs text-amber-950 leading-relaxed font-sans bg-white/70 border border-amber-200/30 p-3 rounded-xl">
+              <p className="text-xs text-noct-text leading-relaxed bg-noct-bg border border-noct-border/60 p-3 rounded-xl">
                 {currentSlide.instructorNotes}
               </p>
             </div>
