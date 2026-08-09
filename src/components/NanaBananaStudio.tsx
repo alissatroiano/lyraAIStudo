@@ -49,6 +49,7 @@ export default function NanaBananaStudio({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingLabel, setGeneratingLabel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [quotaBanner, setQuotaBanner] = useState<string | null>(null);
   
   // Local list of generated visuals (merged with lesson.generatedVisuals if available)
   const [localVisuals, setLocalVisuals] = useState<GeneratedVisual[]>(
@@ -75,6 +76,7 @@ export default function NanaBananaStudio({
     setIsGenerating(true);
     setGeneratingLabel(title);
     setError(null);
+    setQuotaBanner(null);
 
     try {
       const response = await fetch("/api/generate-visual", {
@@ -84,7 +86,8 @@ export default function NanaBananaStudio({
           prompt: finalPrompt,
           aspectRatio: aspectRatio,
           imageSize: imageSize,
-          style: finalStyle
+          style: finalStyle,
+          title: title
         })
       });
 
@@ -94,6 +97,10 @@ export default function NanaBananaStudio({
       }
 
       const data = await response.json();
+
+      if (data.isQuotaFallback && data.quotaNotice) {
+        setQuotaBanner(data.quotaNotice);
+      }
 
       const newVisual: GeneratedVisual = {
         id: `vis_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -166,6 +173,13 @@ export default function NanaBananaStudio({
           <div className="p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-xs text-red-200 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {quotaBanner && (
+          <div className="p-3.5 bg-amber-500/20 border border-amber-500/40 rounded-xl text-xs text-amber-100 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-300 shrink-0" />
+            <span>{quotaBanner}</span>
           </div>
         )}
       </div>

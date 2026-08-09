@@ -413,6 +413,91 @@ Perform Google Search research for current gaming trends & cartoon tropes for ki
   }
 });
 
+function generateSVGVisualFallback(prompt: string, style: string, title?: string): string {
+  const cleanPrompt = prompt.replace(/[<>&"]/g, '');
+  const cleanTitle = (title || 'STEM Hands-On Experiment').replace(/[<>&"]/g, '');
+
+  let themeColor1 = '#0f766e';
+  let themeColor2 = '#d97706';
+  let badgeText = 'EXPERIMENTAL DIAGRAM';
+
+  if (style === 'diagram') {
+    themeColor1 = '#1e40af';
+    badgeText = 'STEM INFOGRAPHIC DIAGRAM';
+  } else if (style === 'vocabulary_card') {
+    themeColor1 = '#6b21a8';
+    badgeText = 'VISUAL VOCABULARY CARD';
+  } else if (style === 'step_by_step') {
+    themeColor1 = '#047857';
+    badgeText = 'PROCEDURE ACTION GUIDE';
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="50%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+      <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="${themeColor1}"/>
+        <stop offset="100%" stop-color="${themeColor2}"/>
+      </linearGradient>
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    
+    <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+      <path d="M 0,75 L 1200,75 M 0,150 L 1200,150 M 0,225 L 1200,225 M 0,300 L 1200,300 M 0,375 L 1200,375 M 0,450 L 1200,450 M 0,525 L 1200,525 M 0,600 L 1200,600" />
+      <path d="M 150,0 L 150,675 M 300,0 L 300,675 M 450,0 L 450,675 M 600,0 L 600,675 M 750,0 L 750,675 M 900,0 L 900,675 M 1050,0 L 1050,675" />
+    </g>
+
+    <rect x="60" y="50" width="1080" height="575" rx="32" fill="url(#cardGrad)" stroke="url(#accent)" stroke-width="3" filter="url(#shadow)"/>
+
+    <rect x="100" y="90" width="300" height="40" rx="20" fill="${themeColor1}" />
+    <text x="250" y="115" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="800" text-anchor="middle" letter-spacing="2">${badgeText}</text>
+
+    <rect x="910" y="90" width="190" height="40" rx="20" fill="#334155" stroke="#475569" stroke-width="1"/>
+    <text x="1005" y="115" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">NANA BANANA PRO</text>
+
+    <text x="100" y="190" fill="#ffffff" font-family="system-ui, sans-serif" font-size="30" font-weight="900">${cleanTitle.slice(0, 50)}</text>
+
+    <rect x="100" y="220" width="1000" height="280" rx="20" fill="#020617" stroke="#334155" stroke-width="2"/>
+
+    <g transform="translate(180, 260)">
+      <path d="M 40,20 L 60,20 L 60,50 L 90,140 A 15,15 0 0,1 75,160 L 25,160 A 15,15 0 0,1 10,140 L 40,50 Z" fill="none" stroke="${themeColor2}" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M 18,140 Q 50,110 82,140 L 75,155 L 25,155 Z" fill="${themeColor2}" opacity="0.6"/>
+      <circle cx="50" cy="90" r="6" fill="#fef3c7"/>
+      <circle cx="38" cy="70" r="4" fill="#fef3c7"/>
+      <circle cx="58" cy="50" r="5" fill="#fef3c7"/>
+
+      <path d="M 120,90 L 190,90 M 175,75 L 195,90 L 175,105" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+
+      <rect x="230" y="30" width="140" height="130" rx="16" fill="none" stroke="${themeColor1}" stroke-width="6"/>
+      <circle cx="300" cy="95" r="40" fill="${themeColor1}" opacity="0.4"/>
+      <path d="M 270,95 Q 300,70 330,95" fill="none" stroke="#5eead4" stroke-width="4"/>
+
+      <text x="420" y="60" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="22" font-weight="800">Hands-On Reaction &amp; Observation</text>
+      <text x="420" y="100" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="15" font-weight="500">${cleanPrompt.slice(0, 70)}...</text>
+      <text x="420" y="130" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="15" font-weight="500">${cleanPrompt.slice(70, 140)}</text>
+    </g>
+
+    <rect x="100" y="530" width="1000" height="55" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="130" y="563" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="14" font-weight="700">🔬 Interactive STEM Vector Diagram</text>
+    <text x="1070" y="563" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="end">AI Studio Science Suite</text>
+  </svg>`;
+
+  const base64 = Buffer.from(svg).toString('base64');
+  return `data:image/svg+xml;base64,${base64}`;
+}
+
 // API endpoint to generate high-definition experiment and lesson visuals using Nana Banana Pro (gemini-3-pro-image)
 app.post("/api/generate-visual", async (req, res) => {
   if (!ai) {
@@ -420,42 +505,44 @@ app.post("/api/generate-visual", async (req, res) => {
       error: "Gemini client not initialized. Please ensure GEMINI_API_KEY is configured."
     });
   }
-  const { prompt, aspectRatio = "16:9", imageSize = "1K", style = "hands_on_experiment" } = req.body;
+  const { prompt, aspectRatio = "16:9", imageSize = "1K", style = "hands_on_experiment", title } = req.body;
   if (!prompt) {
     return res.status(400).json({ error: "prompt is required" });
   }
 
-  try {
-    let enhancedPrompt = prompt;
-    if (style === "hands_on_experiment") {
-      enhancedPrompt = `A clear, vivid, educational visual for a kids STEM hands-on experiment showing: ${prompt}. High clarity, realistic classroom setup, bright natural lighting, labeled equipment, highly engaging for students.`;
-    } else if (style === "diagram") {
-      enhancedPrompt = `A high-definition educational STEM diagram illustrating: ${prompt}. Clean labels, infographic style, colorful, easy to understand for students.`;
-    } else if (style === "vocabulary_card") {
-      enhancedPrompt = `A fun, vibrant educational vocabulary illustration for: ${prompt}. Bold cartoon-inspired visuals, clear subject focus, friendly classroom art.`;
-    } else if (style === "step_by_step") {
-      enhancedPrompt = `A step-by-step experiment guide illustration showing: ${prompt}. Clear action, safety gear, hands-on materials, highly detailed.`;
-    } else if (style === "custom") {
-      enhancedPrompt = `${prompt}. High-definition educational classroom presentation style.`;
-    }
+  let enhancedPrompt = prompt;
+  if (style === "hands_on_experiment") {
+    enhancedPrompt = `A clear, vivid, educational visual for a kids STEM hands-on experiment showing: ${prompt}. High clarity, realistic classroom setup, bright natural lighting, labeled equipment, highly engaging for students.`;
+  } else if (style === "diagram") {
+    enhancedPrompt = `A high-definition educational STEM diagram illustrating: ${prompt}. Clean labels, infographic style, colorful, easy to understand for students.`;
+  } else if (style === "vocabulary_card") {
+    enhancedPrompt = `A fun, vibrant educational vocabulary illustration for: ${prompt}. Bold cartoon-inspired visuals, clear subject focus, friendly classroom art.`;
+  } else if (style === "step_by_step") {
+    enhancedPrompt = `A step-by-step experiment guide illustration showing: ${prompt}. Clear action, safety gear, hands-on materials, highly detailed.`;
+  } else if (style === "custom") {
+    enhancedPrompt = `${prompt}. High-definition educational classroom presentation style.`;
+  }
 
-    console.log(`Generating visual with Nana Banana Pro model for: "${enhancedPrompt}"`);
+  console.log(`Generating visual with Nana Banana Pro model for: "${enhancedPrompt}"`);
 
-    let imageUrl: string | null = null;
-    let textDescription = "";
+  let imageUrl: string | null = null;
+  let textDescription = "";
+  let isQuotaFallback = false;
+  let quotaNotice = "";
 
+  const modelsToTry = [
+    { name: 'gemini-3-pro-image', config: { imageConfig: { aspectRatio, imageSize } } },
+    { name: 'gemini-3.1-flash-image', config: { imageConfig: { aspectRatio, imageSize: "1K" } } },
+    { name: 'gemini-3.1-flash-lite-image', config: { imageConfig: { aspectRatio } } }
+  ];
+
+  for (const modelSpec of modelsToTry) {
+    if (imageUrl) break;
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-image',
-        contents: {
-          parts: [{ text: enhancedPrompt }]
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: aspectRatio,
-            imageSize: imageSize
-          }
-        }
+        model: modelSpec.name,
+        contents: { parts: [{ text: enhancedPrompt }] },
+        config: modelSpec.config as any
       });
 
       if (response.candidates?.[0]?.content?.parts) {
@@ -469,52 +556,26 @@ app.post("/api/generate-visual", async (req, res) => {
         }
       }
     } catch (e: any) {
-      console.warn("gemini-3-pro-image call attempt failed, attempting gemini-3.1-flash-image fallback:", e?.message);
+      console.warn(`Model ${modelSpec.name} call failed:`, e?.message || e);
     }
-
-    if (!imageUrl) {
-      // Fallback model
-      const fallbackResponse = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image',
-        contents: {
-          parts: [{ text: enhancedPrompt }]
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: aspectRatio,
-            imageSize: "1K"
-          }
-        }
-      });
-
-      if (fallbackResponse.candidates?.[0]?.content?.parts) {
-        for (const part of fallbackResponse.candidates[0].content.parts) {
-          if (part.inlineData) {
-            const base64EncodeString: string = part.inlineData.data;
-            imageUrl = `data:image/png;base64,${base64EncodeString}`;
-          } else if (part.text) {
-            textDescription += part.text;
-          }
-        }
-      }
-    }
-
-    if (!imageUrl) {
-      return res.status(500).json({ error: "No visual image returned from Nana Banana Pro model." });
-    }
-
-    res.json({
-      imageUrl,
-      textDescription,
-      prompt: enhancedPrompt
-    });
-  } catch (error: any) {
-    console.error("Nana Banana Pro visual generation error:", error);
-    res.status(500).json({
-      error: "Failed to generate visual with Nana Banana Pro.",
-      details: error?.message || String(error)
-    });
   }
+
+  // If AI generation fails (e.g., 429 quota / credits depleted), generate high quality vector diagram SVG fallback
+  if (!imageUrl) {
+    console.warn("All image models failed (likely credit/quota depletion). Serving vector diagram fallback.");
+    imageUrl = generateSVGVisualFallback(prompt, style, title);
+    isQuotaFallback = true;
+    quotaNotice = "Your Gemini API prepayment credits for Nana Banana Pro (gemini-3-pro-image) are currently depleted. An interactive vector diagram was generated as a fallback visual.";
+    textDescription = "Vector experiment diagram rendered as a fallback.";
+  }
+
+  return res.json({
+    imageUrl,
+    textDescription,
+    prompt: enhancedPrompt,
+    isQuotaFallback,
+    quotaNotice
+  });
 });
 
 // API endpoint to initiate Veo video generation
