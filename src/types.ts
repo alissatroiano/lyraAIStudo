@@ -10,6 +10,7 @@ export interface HandsOnActivity {
   materials: string[];
   steps: string[];
   scientificPrinciple: string;
+  finishedProductSvg?: string;
 }
 
 export interface WorksheetQuestion {

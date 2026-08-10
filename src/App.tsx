@@ -1242,7 +1242,7 @@ export default function App() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-teal-dark font-sans flex items-center gap-1.5">
-                    <span>Gamify Lesson (Neurodiverse & Dyslexia Optimized)</span>
+                    <span>Generate Lesson (Neurodiverse & Dyslexia Optimized)</span>
                     <span className="text-[8px] uppercase tracking-wider bg-teal-600 text-white font-mono font-bold px-1.5 py-0.5 rounded">
                       Locked Active
                     </span>

@@ -245,7 +245,7 @@ export default function InteractiveSlideshow({
             ))}
           </div>
 
-          {currentSlide.visualConcept && (
+          {showNotes && currentSlide.visualConcept && (
             <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-2 mt-4 text-left">
               <span className="text-[10px] uppercase tracking-widest font-bold text-teal-brand font-mono">Suggested Smartboard Sketch:</span>
               <p className="text-xs text-slate-300 italic font-sans">
@@ -566,23 +566,33 @@ export default function InteractiveSlideshow({
         </div>
       </div>
 
-      {/* Visual Concept Block */}
-      {currentSlide.visualConcept && (
-        <div className="bg-slate-50 border border-black/[0.05] rounded-2xl p-5 space-y-3 shadow-3xs text-left" id="visual-concept-card">
-          <div className="flex items-center gap-2.5 text-teal-dark">
-            <div className="w-7 h-7 rounded-lg bg-teal-light flex items-center justify-center text-teal-brand">
-              <Eye className="w-4 h-4" />
+      {/* Visual Concept Block (Controlled by Facilitator Cues toggle) */}
+      <AnimatePresence>
+        {showNotes && currentSlide.visualConcept && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+            id="visual-concept-card"
+          >
+            <div className="bg-slate-50 border border-black/[0.05] rounded-2xl p-5 space-y-3 shadow-3xs text-left">
+              <div className="flex items-center gap-2.5 text-teal-dark">
+                <div className="w-7 h-7 rounded-lg bg-teal-light flex items-center justify-center text-teal-brand">
+                  <Eye className="w-4 h-4" />
+                </div>
+                <div>
+                  <h5 className="text-xs font-bold uppercase font-sans tracking-tight">Smartboard Visual Concept</h5>
+                  <p className="text-[9px] text-secondary leading-none">Suggested live illustration or board sketch</p>
+                </div>
+              </div>
+              <p className="text-xs text-secondary leading-relaxed font-sans bg-white border border-black/[0.04] p-3 rounded-xl italic">
+                "{currentSlide.visualConcept}"
+              </p>
             </div>
-            <div>
-              <h5 className="text-xs font-bold uppercase font-sans tracking-tight">Smartboard Visual Concept</h5>
-              <p className="text-[9px] text-secondary leading-none">Suggested live illustration or board sketch</p>
-            </div>
-          </div>
-          <p className="text-xs text-secondary leading-relaxed font-sans bg-white border border-black/[0.04] p-3 rounded-xl italic">
-            "{currentSlide.visualConcept}"
-          </p>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Facilitator Notes (Collapsible or toggleable) */}
       <AnimatePresence>

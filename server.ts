@@ -129,6 +129,7 @@ Core requirements for your response:
 5. DEMONSTRATE: Create an exciting, safe, and highly visual hands-on scientific demonstration or experiment that instructors can easily run with common materials.
 6. RESOLVE: Provide suggestions to resolve potentially broken links in the original document by suggesting precise YouTube/Google search queries.
 7. ADAPT & OBSERVE: Identify the teacher's style, preferences, and classroom parameters from their custom instructions, and output a concise 'extractedStyleNotes' (e.g., "Educator prefers low-tech hands-on building challenges with structured classroom review.").
+8. HANDS-ON SVG VECTOR BLUEPRINT: For handsOnActivity, generate a valid, self-contained SVG string in finishedProductSvg (starting with '<svg viewBox="0 0 600 400"...>' and ending with '</svg>'). The SVG must clearly illustrate the finished hands-on experiment assembly or prototype built by students with labeled parts, vibrant vector shapes, dark/light contrast, and clear blueprint aesthetics.
 
 You must output a highly structured JSON object matching the defined responseSchema strictly. Do not deviate.`;
 
@@ -226,6 +227,10 @@ Please convert this into a comprehensive, highly interactive lesson plan with sl
                 scientificPrinciple: {
                   type: Type.STRING,
                   description: "Kid-friendly scientific explanation of why the activity works (the 'Magic behind the science').",
+                },
+                finishedProductSvg: {
+                  type: Type.STRING,
+                  description: "A complete, valid self-contained SVG string (starting with <svg> and ending with </svg>) illustrating the finished hands-on experiment assembly or prototype with labeled parts, colorful vector geometry, and clear text labels.",
                 },
               },
             },

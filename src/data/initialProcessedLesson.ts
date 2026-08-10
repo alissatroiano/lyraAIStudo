@@ -70,7 +70,73 @@ export const INITIAL_PROCESSED_LESSON: ProcessedLesson = {
       "Slide the straw-balloon assembly back to the starting line.",
       "Unclamp the binder clip and watch your rocket fly! Measure and record the distance traveled."
     ],
-    scientificPrinciple: "When you release the clip, the stretched latex squeezes the air out of the nozzle (Action). The escaping air pushes forward against the inside of the balloon, launching the balloon-straw car along the fishing line in the opposite direction (Reaction)!"
+    scientificPrinciple: "When you release the clip, the stretched latex squeezes the air out of the nozzle (Action). The escaping air pushes forward against the inside of the balloon, launching the balloon-straw car along the fishing line in the opposite direction (Reaction)!",
+    finishedProductSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 420" width="100%" height="100%" style="background:#0f172a; border-radius:16px;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="balloonGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="50%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+    <linearGradient id="thrustGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#f97316" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#facc15" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#facc15" stop-opacity="0" />
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="700" height="420" fill="url(#bgGrad)" rx="16" />
+  <rect width="700" height="420" fill="url(#grid)" rx="16" />
+
+  <rect x="25" y="20" width="260" height="28" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+  <text x="35" y="38" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">FINISHED ASSEMBLY BLUEPRINT</text>
+
+  <text x="25" y="72" fill="#ffffff" font-family="sans-serif" font-size="20" font-weight="800">BALLOON ROCKET CAR ASSEMBLY</text>
+  <text x="25" y="92" fill="#94a3b8" font-family="sans-serif" font-size="12">Newton's Third Law Propulsion Demo</text>
+
+  <line x1="50" y1="230" x2="650" y2="230" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6,4" />
+  <circle cx="50" cy="230" r="6" fill="#0284c7" />
+  <text x="30" y="260" fill="#94a3b8" font-family="sans-serif" font-size="10" font-weight="bold">Start Anchor</text>
+  <circle cx="650" cy="230" r="6" fill="#0284c7" />
+  <text x="610" y="260" fill="#94a3b8" font-family="sans-serif" font-size="10" font-weight="bold">Target Wall</text>
+
+  <rect x="280" y="222" width="140" height="16" rx="4" fill="#0ea5e9" stroke="#bae6fd" stroke-width="1.5" />
+
+  <rect x="300" y="208" width="18" height="42" rx="2" fill="#fef08a" opacity="0.8" stroke="#ca8a04" stroke-width="1" />
+  <rect x="340" y="208" width="18" height="42" rx="2" fill="#fef08a" opacity="0.8" stroke="#ca8a04" stroke-width="1" />
+  <rect x="380" y="208" width="18" height="42" rx="2" fill="#fef08a" opacity="0.8" stroke="#ca8a04" stroke-width="1" />
+
+  <ellipse cx="350" cy="170" rx="100" ry="45" fill="url(#balloonGrad)" stroke="#fda4af" stroke-width="2" />
+  <path d="M 250 170 L 230 162 L 225 178 L 250 170 Z" fill="#e11d48" stroke="#fda4af" stroke-width="1" />
+  
+  <polygon points="220,170 120,130 120,210" fill="url(#thrustGrad)" />
+  <path d="M 210 170 L 140 170" stroke="#fef08a" stroke-width="3" stroke-dasharray="4,4" />
+  <text x="110" y="155" fill="#f87171" font-family="sans-serif" font-size="12" font-weight="bold">ACTION: Air Exhaust</text>
+
+  <path d="M 470 170 L 570 170" stroke="#4ade80" stroke-width="5" />
+  <polygon points="570,170 550,160 550,180" fill="#4ade80" />
+  <text x="475" y="155" fill="#4ade80" font-family="sans-serif" font-size="12" font-weight="bold">REACTION: Forward Flight</text>
+
+  <line x1="350" y1="238" x2="350" y2="300" stroke="#94a3b8" stroke-width="1.5" />
+  <circle cx="350" cy="300" r="3" fill="#38bdf8" />
+  <rect x="280" y="305" width="140" height="30" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+  <text x="350" y="324" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Plastic Straw Guide</text>
+
+  <line x1="350" y1="125" x2="350" y2="50" stroke="#94a3b8" stroke-width="1.5" />
+  <circle cx="350" cy="50" r="3" fill="#fb7185" />
+  <rect x="270" y="25" width="160" height="30" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1" />
+  <text x="350" y="44" fill="#fb7185" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">12" Inflated Balloon</text>
+
+  <text x="350" y="380" fill="#94a3b8" font-family="monospace" font-size="11" text-anchor="middle">15-Foot Taut Nylon Track</text>
+</svg>`
   },
   worksheet: {
     title: "Balloon Rocket Physics Lab Guide",
