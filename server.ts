@@ -465,7 +465,7 @@ function generateSVGVisualFallback(prompt: string, style: string, title?: string
     <text x="250" y="115" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="800" text-anchor="middle" letter-spacing="2">${badgeText}</text>
 
     <rect x="910" y="90" width="190" height="40" rx="20" fill="#334155" stroke="#475569" stroke-width="1"/>
-    <text x="1005" y="115" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">NANA BANANA PRO</text>
+    <text x="1005" y="115" fill="#f1f5f9" font-family="system-ui, sans-serif" font-size="12" font-weight="700" text-anchor="middle">VISUAL STUDIO PRO</text>
 
     <text x="100" y="190" fill="#ffffff" font-family="system-ui, sans-serif" font-size="30" font-weight="900">${cleanTitle.slice(0, 50)}</text>
 
@@ -565,7 +565,7 @@ app.post("/api/generate-visual", async (req, res) => {
     console.warn("All image models failed (likely credit/quota depletion). Serving vector diagram fallback.");
     imageUrl = generateSVGVisualFallback(prompt, style, title);
     isQuotaFallback = true;
-    quotaNotice = "Your Gemini API prepayment credits for Nana Banana Pro (gemini-3-pro-image) are currently depleted. An interactive vector diagram was generated as a fallback visual.";
+    quotaNotice = "Your Gemini API prepayment credits for Visual Studio (gemini-3-pro-image) are currently depleted. An interactive vector diagram was generated as a fallback visual.";
     textDescription = "Vector experiment diagram rendered as a fallback.";
   }
 

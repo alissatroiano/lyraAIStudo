@@ -17,7 +17,9 @@ import {
   Copy,
   Maximize2,
   X,
-  Plus
+  Plus,
+  Sun,
+  Moon
 } from "lucide-react";
 import { ProcessedLesson, GeneratedVisual } from "../types";
 
@@ -42,6 +44,7 @@ export default function NanaBananaStudio({
   stopSpeaking,
   isSpeaking = false
 }: NanaBananaStudioProps) {
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [selectedStyle, setSelectedStyle] = useState<string>("hands_on_experiment");
   const [aspectRatio, setAspectRatio] = useState<string>("16:9");
@@ -93,7 +96,7 @@ export default function NanaBananaStudio({
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.details || errData.error || "Failed to generate visual using Nana Banana Pro.");
+        throw new Error(errData.details || errData.error || "Failed to generate visual using Visual Studio.");
       }
 
       const data = await response.json();
@@ -122,7 +125,7 @@ export default function NanaBananaStudio({
         setCustomPrompt("");
       }
     } catch (err: any) {
-      console.error("Nana Banana Pro generation error:", err);
+      console.error("Visual Studio generation error:", err);
       setError(err?.message || "Failed to generate experiment visual. Please check your API key.");
     } finally {
       setIsGenerating(false);
@@ -145,11 +148,48 @@ export default function NanaBananaStudio({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Helper theme classes based on mode
+  const containerTheme = isDarkMode 
+    ? "bg-slate-950 text-slate-100 p-4 sm:p-6 rounded-3xl space-y-6" 
+    : "space-y-6";
+
+  const cardBg = isDarkMode 
+    ? "bg-slate-900 border border-slate-800 text-slate-100" 
+    : "bg-white border border-black/[0.1] text-primary";
+
+  const cardHeaderBorder = isDarkMode 
+    ? "border-b border-slate-800" 
+    : "border-b border-black/[0.06]";
+
+  const headerTitleText = isDarkMode 
+    ? "text-amber-400" 
+    : "text-teal-dark";
+
+  const subText = isDarkMode 
+    ? "text-slate-400" 
+    : "text-secondary";
+
+  const innerBoxBg = isDarkMode 
+    ? "bg-slate-800/80 border border-slate-700/60" 
+    : "bg-surface-0/60 border border-black/[0.06]";
+
+  const inputStyle = isDarkMode 
+    ? "bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:ring-amber-400/20" 
+    : "bg-white border border-black/[0.12] text-primary placeholder-gray-400 focus:border-amber-500 focus:ring-amber-500/20";
+
+  const stepItemBg = isDarkMode 
+    ? "border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-100" 
+    : "border-black/[0.06] bg-surface-0/50 hover:bg-surface-0 text-primary";
+
   return (
-    <div className="space-y-6 animate-fade-in font-sans">
+    <div className={`${containerTheme} animate-fade-in font-sans transition-colors duration-300`}>
       
       {/* Top Banner & Model Badge */}
-      <div className="bg-gradient-to-r from-amber-950 via-teal-950 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-md border border-amber-500/20 space-y-4">
+      <div className={`${
+        isDarkMode 
+          ? "bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 border-amber-500/30" 
+          : "bg-gradient-to-r from-amber-950 via-teal-950 to-emerald-950 border-amber-500/20"
+      } text-white rounded-3xl p-6 sm:p-8 shadow-md border space-y-4`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-amber-950 shadow-md shrink-0 font-bold">
@@ -157,7 +197,7 @@ export default function NanaBananaStudio({
             </div>
             <div>
               <h3 className="text-xl font-black text-white flex items-center gap-2 flex-wrap">
-                <span>Nana Banana Pro Visual Studio</span>
+                <span>Visual Studio</span>
                 <span className="text-[10px] bg-amber-400 text-amber-950 font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   gemini-3-pro-image
                 </span>
@@ -166,6 +206,31 @@ export default function NanaBananaStudio({
                 Generate crisp, high-definition AI visuals, labeled lab diagrams, and step-by-step experiment illustrations for your classroom!
               </p>
             </div>
+          </div>
+
+          {/* Dark / Light Mode Switcher Button */}
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <button
+              type="button"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm border ${
+                isDarkMode
+                  ? "bg-amber-400 text-amber-950 border-amber-300 hover:bg-amber-300"
+                  : "bg-white/15 text-white border-white/20 hover:bg-white/25 backdrop-blur-md"
+              }`}
+            >
+              {isDarkMode ? (
+                <>
+                  <Sun className="w-4 h-4 text-amber-950" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4 text-amber-200" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -185,21 +250,21 @@ export default function NanaBananaStudio({
       </div>
 
       {/* Quick Visual Prompting Buttons for Active Experiment */}
-      <div className="bg-white border border-black/[0.1] rounded-3xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+      <div className={`${cardBg} rounded-3xl p-6 shadow-sm space-y-4 transition-colors duration-200`}>
+        <div className={`flex items-center justify-between ${cardHeaderBorder} pb-3`}>
           <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-teal-brand" />
-            <h4 className="text-sm font-bold text-teal-dark font-sans">
+            <FlaskConical className={`w-4 h-4 ${isDarkMode ? "text-amber-400" : "text-teal-brand"}`} />
+            <h4 className={`text-sm font-bold ${headerTitleText} font-sans`}>
               Instant Experiment & Lesson Visual Prompts
             </h4>
           </div>
-          <span className="text-[10px] font-mono text-secondary">
+          <span className={`text-[10px] font-mono ${subText}`}>
             1-Click Generation
           </span>
         </div>
 
-        <p className="text-xs text-secondary leading-relaxed font-sans">
-          Click any preset below to instantly prompt Nana Banana Pro to create a visual tailored to <strong>{lesson.lessonTitle}</strong>:
+        <p className={`text-xs ${subText} leading-relaxed font-sans`}>
+          Click any preset below to instantly prompt Visual Studio to create a visual tailored to <strong className={isDarkMode ? "text-amber-300" : "text-primary"}>{lesson.lessonTitle}</strong>:
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -212,16 +277,20 @@ export default function NanaBananaStudio({
               "Main Lab Setup Visual"
             )}
             disabled={isGenerating}
-            className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50"
+            className={`p-3.5 rounded-2xl border transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50 ${
+              isDarkMode 
+                ? "border-amber-500/30 bg-amber-950/30 hover:bg-amber-950/50 text-amber-200" 
+                : "border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 text-amber-900"
+            }`}
           >
-            <div className="flex items-center justify-between text-amber-900 font-bold text-xs">
+            <div className="flex items-center justify-between font-bold text-xs">
               <span className="flex items-center gap-1.5">
-                <FlaskConical className="w-3.5 h-3.5 text-amber-600" />
+                <FlaskConical className="w-3.5 h-3.5 text-amber-500" />
                 Lab Setup
               </span>
-              <Wand2 className="w-3.5 h-3.5 text-amber-600 opacity-60 group-hover:opacity-100" />
+              <Wand2 className="w-3.5 h-3.5 text-amber-500 opacity-60 group-hover:opacity-100" />
             </div>
-            <p className="text-[10px] text-amber-800/80 line-clamp-2">
+            <p className={`text-[10px] line-clamp-2 ${isDarkMode ? "text-amber-200/70" : "text-amber-800/80"}`}>
               Visualizes the complete hands-on experiment setup and equipment in a kids classroom.
             </p>
           </button>
@@ -235,16 +304,20 @@ export default function NanaBananaStudio({
               "Procedure Guide Visual"
             )}
             disabled={isGenerating}
-            className="p-3.5 rounded-2xl border border-teal-200 bg-teal-50/50 hover:bg-teal-100/60 transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50"
+            className={`p-3.5 rounded-2xl border transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50 ${
+              isDarkMode 
+                ? "border-teal-500/30 bg-teal-950/30 hover:bg-teal-950/50 text-teal-200" 
+                : "border-teal-200 bg-teal-50/50 hover:bg-teal-100/60 text-teal-900"
+            }`}
           >
-            <div className="flex items-center justify-between text-teal-900 font-bold text-xs">
+            <div className="flex items-center justify-between font-bold text-xs">
               <span className="flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-teal-600" />
+                <Layers className="w-3.5 h-3.5 text-teal-500" />
                 Step-by-Step Guide
               </span>
-              <Wand2 className="w-3.5 h-3.5 text-teal-600 opacity-60 group-hover:opacity-100" />
+              <Wand2 className="w-3.5 h-3.5 text-teal-500 opacity-60 group-hover:opacity-100" />
             </div>
-            <p className="text-[10px] text-teal-800/80 line-clamp-2">
+            <p className={`text-[10px] line-clamp-2 ${isDarkMode ? "text-teal-200/70" : "text-teal-800/80"}`}>
               Creates step-by-step procedure visuals showing students performing the experiment.
             </p>
           </button>
@@ -258,16 +331,20 @@ export default function NanaBananaStudio({
               "Scientific Concept Diagram"
             )}
             disabled={isGenerating}
-            className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50"
+            className={`p-3.5 rounded-2xl border transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50 ${
+              isDarkMode 
+                ? "border-blue-500/30 bg-blue-950/30 hover:bg-blue-950/50 text-blue-200" 
+                : "border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 text-blue-900"
+            }`}
           >
-            <div className="flex items-center justify-between text-blue-900 font-bold text-xs">
+            <div className="flex items-center justify-between font-bold text-xs">
               <span className="flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
                 Labeled Diagram
               </span>
-              <Wand2 className="w-3.5 h-3.5 text-blue-600 opacity-60 group-hover:opacity-100" />
+              <Wand2 className="w-3.5 h-3.5 text-blue-500 opacity-60 group-hover:opacity-100" />
             </div>
-            <p className="text-[10px] text-blue-800/80 line-clamp-2">
+            <p className={`text-[10px] line-clamp-2 ${isDarkMode ? "text-blue-200/70" : "text-blue-800/80"}`}>
               Generates clean, color-coded scientific infographics and labeled diagrams.
             </p>
           </button>
@@ -281,16 +358,20 @@ export default function NanaBananaStudio({
               "Vocabulary Visual Card"
             )}
             disabled={isGenerating}
-            className="p-3.5 rounded-2xl border border-purple-200 bg-purple-50/50 hover:bg-purple-100/60 transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50"
+            className={`p-3.5 rounded-2xl border transition-all text-left space-y-1.5 cursor-pointer group disabled:opacity-50 ${
+              isDarkMode 
+                ? "border-purple-500/30 bg-purple-950/30 hover:bg-purple-950/50 text-purple-200" 
+                : "border-purple-200 bg-purple-50/50 hover:bg-purple-100/60 text-purple-900"
+            }`}
           >
-            <div className="flex items-center justify-between text-purple-900 font-bold text-xs">
+            <div className="flex items-center justify-between font-bold text-xs">
               <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <Sparkles className="w-3.5 h-3.5 text-purple-500" />
                 Vocab Art Card
               </span>
-              <Wand2 className="w-3.5 h-3.5 text-purple-600 opacity-60 group-hover:opacity-100" />
+              <Wand2 className="w-3.5 h-3.5 text-purple-500 opacity-60 group-hover:opacity-100" />
             </div>
-            <p className="text-[10px] text-purple-800/80 line-clamp-2">
+            <p className={`text-[10px] line-clamp-2 ${isDarkMode ? "text-purple-200/70" : "text-purple-800/80"}`}>
               Creates bold visual flashcards weaving key vocabulary into memorable graphics.
             </p>
           </button>
@@ -298,22 +379,22 @@ export default function NanaBananaStudio({
       </div>
 
       {/* Custom Prompt Generator Workspace */}
-      <div className="bg-white border border-black/[0.1] rounded-3xl p-6 shadow-sm space-y-5">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+      <div className={`${cardBg} rounded-3xl p-6 shadow-sm space-y-5 transition-colors duration-200`}>
+        <div className={`flex items-center justify-between ${cardHeaderBorder} pb-3`}>
           <div className="flex items-center gap-2">
-            <Wand2 className="w-4 h-4 text-amber-600" />
-            <h4 className="text-sm font-bold text-teal-dark font-sans">
+            <Wand2 className="w-4 h-4 text-amber-500" />
+            <h4 className={`text-sm font-bold ${headerTitleText} font-sans`}>
               Custom Visual Prompt Studio
             </h4>
           </div>
-          <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-bold">
-            Nana Banana Pro Engine
+          <span className={`text-[10px] font-mono ${isDarkMode ? "text-amber-400 bg-amber-950/80" : "text-amber-700 bg-amber-50"} px-2 py-0.5 rounded-full font-bold`}>
+            Visual Studio Engine
           </span>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-teal-dark block font-sans">
+            <label className={`text-xs font-bold ${isDarkMode ? "text-slate-200" : "text-teal-dark"} block font-sans`}>
               Describe the experiment visual or lesson diagram you want to create:
             </label>
             <textarea
@@ -321,21 +402,25 @@ export default function NanaBananaStudio({
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               placeholder={`e.g., A kid-friendly classroom experiment showing a baking soda and vinegar chemical reaction volcano with bright foam bubbling into a clear container, labeled with safety goggles...`}
-              className="w-full p-3.5 text-xs rounded-2xl border border-black/[0.12] focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all outline-none font-sans"
+              className={`w-full p-3.5 text-xs rounded-2xl transition-all outline-none font-sans ${inputStyle}`}
             />
           </div>
 
           {/* Settings Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-surface-0/60 p-4 rounded-2xl border border-black/[0.06]">
+          <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl ${innerBoxBg}`}>
             {/* Style Selector */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block font-sans">
+              <label className={`text-[10px] font-bold ${subText} uppercase tracking-wider block font-sans`}>
                 Visual Style
               </label>
               <select
                 value={selectedStyle}
                 onChange={(e) => setSelectedStyle(e.target.value)}
-                className="w-full p-2 text-xs rounded-xl border border-black/[0.12] bg-white font-sans font-semibold text-primary outline-none"
+                className={`w-full p-2 text-xs rounded-xl font-sans font-semibold outline-none ${
+                  isDarkMode 
+                    ? "bg-slate-900 border border-slate-700 text-slate-100" 
+                    : "bg-white border border-black/[0.12] text-primary"
+                }`}
               >
                 <option value="hands_on_experiment">🧪 Hands-On Experiment Setup</option>
                 <option value="diagram">📊 Labeled STEM Diagram</option>
@@ -347,13 +432,17 @@ export default function NanaBananaStudio({
 
             {/* Aspect Ratio */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block font-sans">
+              <label className={`text-[10px] font-bold ${subText} uppercase tracking-wider block font-sans`}>
                 Aspect Ratio
               </label>
               <select
                 value={aspectRatio}
                 onChange={(e) => setAspectRatio(e.target.value)}
-                className="w-full p-2 text-xs rounded-xl border border-black/[0.12] bg-white font-sans font-semibold text-primary outline-none"
+                className={`w-full p-2 text-xs rounded-xl font-sans font-semibold outline-none ${
+                  isDarkMode 
+                    ? "bg-slate-900 border border-slate-700 text-slate-100" 
+                    : "bg-white border border-black/[0.12] text-primary"
+                }`}
               >
                 <option value="16:9">16:9 (Slide Presentation)</option>
                 <option value="4:3">4:3 (Classroom Card)</option>
@@ -364,16 +453,20 @@ export default function NanaBananaStudio({
 
             {/* Image Resolution */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block font-sans">
+              <label className={`text-[10px] font-bold ${subText} uppercase tracking-wider block font-sans`}>
                 Resolution Quality
               </label>
               <select
                 value={imageSize}
                 onChange={(e) => setImageSize(e.target.value)}
-                className="w-full p-2 text-xs rounded-xl border border-black/[0.12] bg-white font-sans font-semibold text-primary outline-none"
+                className={`w-full p-2 text-xs rounded-xl font-sans font-semibold outline-none ${
+                  isDarkMode 
+                    ? "bg-slate-900 border border-slate-700 text-slate-100" 
+                    : "bg-white border border-black/[0.12] text-primary"
+                }`}
               >
                 <option value="1K">1K High Definition (Standard)</option>
-                <option value="2K">2K Ultra HD (Nana Banana Pro)</option>
+                <option value="2K">2K Ultra HD (Pro)</option>
               </select>
             </div>
           </div>
@@ -388,7 +481,7 @@ export default function NanaBananaStudio({
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-amber-950" />
-                  <span>Rendering Nana Banana Pro Visual...</span>
+                  <span>Rendering Visual...</span>
                 </>
               ) : (
                 <>
@@ -403,13 +496,13 @@ export default function NanaBananaStudio({
 
       {/* Hands-on Activity Steps with Direct Visual Generator */}
       {lesson.handsOnActivity && lesson.handsOnActivity.steps && lesson.handsOnActivity.steps.length > 0 && (
-        <div className="bg-white border border-black/[0.1] rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
-            <h4 className="text-sm font-bold text-teal-dark font-sans flex items-center gap-2">
-              <FlaskConical className="w-4 h-4 text-amber-600" />
+        <div className={`${cardBg} rounded-3xl p-6 shadow-sm space-y-4 transition-colors duration-200`}>
+          <div className={`flex items-center justify-between ${cardHeaderBorder} pb-3`}>
+            <h4 className={`text-sm font-bold ${headerTitleText} font-sans flex items-center gap-2`}>
+              <FlaskConical className="w-4 h-4 text-amber-500" />
               <span>Experiment Step-by-Step Visual Guides</span>
             </h4>
-            <span className="text-[10px] text-secondary font-mono">
+            <span className={`text-[10px] ${subText} font-mono`}>
               {lesson.handsOnActivity.steps.length} Steps
             </span>
           </div>
@@ -418,13 +511,15 @@ export default function NanaBananaStudio({
             {lesson.handsOnActivity.steps.map((stepText, idx) => (
               <div 
                 key={idx}
-                className="p-3.5 rounded-2xl border border-black/[0.06] bg-surface-0/50 hover:bg-surface-0 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className={`p-3.5 rounded-2xl border ${stepItemBg} transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
               >
                 <div className="flex items-start gap-3 flex-1">
-                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  <span className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 ${
+                    isDarkMode ? "bg-amber-500/20 text-amber-300" : "bg-amber-100 text-amber-900"
+                  }`}>
                     {idx + 1}
                   </span>
-                  <p className="text-xs text-primary leading-relaxed font-sans font-medium">
+                  <p className={`text-xs leading-relaxed font-sans font-medium ${isDarkMode ? "text-slate-200" : "text-primary"}`}>
                     {bionicReading && formatBionicText ? formatBionicText(stepText) : stepText}
                   </p>
                 </div>
@@ -437,9 +532,13 @@ export default function NanaBananaStudio({
                     `Step ${idx + 1} Visual Guide`
                   )}
                   disabled={isGenerating}
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-950 font-bold text-[11px] transition-all shrink-0 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className={`px-3.5 py-1.5 rounded-xl font-bold text-[11px] transition-all shrink-0 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 border ${
+                    isDarkMode 
+                      ? "bg-amber-500/20 border-amber-500/40 hover:bg-amber-500/30 text-amber-200" 
+                      : "bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-950"
+                  }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                   <span>Prompt Step {idx + 1} Visual</span>
                 </button>
               </div>
@@ -449,27 +548,31 @@ export default function NanaBananaStudio({
       )}
 
       {/* Generated Visuals Gallery */}
-      <div className="bg-white border border-black/[0.1] rounded-3xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+      <div className={`${cardBg} rounded-3xl p-6 shadow-sm space-y-4 transition-colors duration-200`}>
+        <div className={`flex items-center justify-between ${cardHeaderBorder} pb-3`}>
           <div className="flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-amber-600" />
-            <h4 className="text-sm font-bold text-teal-dark font-sans">
+            <ImageIcon className="w-4 h-4 text-amber-500" />
+            <h4 className={`text-sm font-bold ${headerTitleText} font-sans`}>
               Lesson Visual Gallery ({localVisuals.length})
             </h4>
           </div>
-          <span className="text-[10px] text-secondary font-mono">
+          <span className={`text-[10px] ${subText} font-mono`}>
             High-Res Artifacts
           </span>
         </div>
 
         {localVisuals.length === 0 ? (
-          <div className="text-center py-10 space-y-3 bg-surface-0/50 rounded-2xl border border-dashed border-black/[0.1]">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+          <div className={`text-center py-10 space-y-3 rounded-2xl border border-dashed ${
+            isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-surface-0/50 border-black/[0.1]"
+          }`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto ${
+              isDarkMode ? "bg-slate-800 text-amber-400" : "bg-amber-100 text-amber-800"
+            }`}>
               <ImageIcon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-teal-dark">No visuals generated yet</p>
-              <p className="text-[10px] text-secondary mt-0.5 max-w-sm mx-auto">
+              <p className={`text-xs font-bold ${isDarkMode ? "text-slate-200" : "text-teal-dark"}`}>No visuals generated yet</p>
+              <p className={`text-[10px] ${subText} mt-0.5 max-w-sm mx-auto`}>
                 Use the 1-click preset buttons above or write a custom prompt to create high-definition visuals for your experiment!
               </p>
             </div>
@@ -479,16 +582,20 @@ export default function NanaBananaStudio({
             {localVisuals.map((visual) => (
               <div 
                 key={visual.id}
-                className="group relative bg-surface-0 border border-black/[0.08] rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col"
+                className={`group relative rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col border ${
+                  isDarkMode 
+                    ? "bg-slate-900 border-slate-800" 
+                    : "bg-surface-0 border-black/[0.08]"
+                }`}
               >
-                <div className="relative aspect-video bg-black/5 overflow-hidden">
+                <div className="relative aspect-video bg-black/20 overflow-hidden">
                   <img 
                     src={visual.imageUrl} 
                     alt={visual.title}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => setPreviewVisual(visual)}
@@ -510,23 +617,29 @@ export default function NanaBananaStudio({
 
                 <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
                   <div>
-                    <h5 className="text-xs font-bold text-teal-dark line-clamp-1">{visual.title}</h5>
-                    <p className="text-[10px] text-secondary line-clamp-2 mt-0.5">{visual.prompt}</p>
+                    <h5 className={`text-xs font-bold line-clamp-1 ${isDarkMode ? "text-amber-300" : "text-teal-dark"}`}>{visual.title}</h5>
+                    <p className={`text-[10px] line-clamp-2 mt-0.5 ${subText}`}>{visual.prompt}</p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-black/[0.06] pt-2 text-[10px]">
-                    <span className="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-full capitalize">
+                  <div className={`flex items-center justify-between border-t ${isDarkMode ? "border-slate-800" : "border-black/[0.06]"} pt-2 text-[10px]`}>
+                    <span className={`font-semibold px-2 py-0.5 rounded-full capitalize ${
+                      isDarkMode ? "bg-amber-950/60 text-amber-300" : "bg-amber-50 text-amber-800"
+                    }`}>
                       {visual.style.replace(/_/g, ' ')}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => handleCopyLink(visual)}
-                        className="p-1 hover:bg-black/5 rounded text-secondary hover:text-primary transition-all cursor-pointer"
+                        className={`p-1 rounded transition-all cursor-pointer ${
+                          isDarkMode 
+                            ? "hover:bg-slate-800 text-slate-400 hover:text-slate-100" 
+                            : "hover:bg-black/5 text-secondary hover:text-primary"
+                        }`}
                         title="Copy image link"
                       >
                         {copiedId === visual.id ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-brand" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -535,7 +648,11 @@ export default function NanaBananaStudio({
                         <button
                           type="button"
                           onClick={() => speakText(`Visual description: ${visual.prompt}`)}
-                          className="p-1 hover:bg-black/5 rounded text-secondary hover:text-primary transition-all cursor-pointer"
+                          className={`p-1 rounded transition-all cursor-pointer ${
+                            isDarkMode 
+                              ? "hover:bg-slate-800 text-slate-400 hover:text-slate-100" 
+                              : "hover:bg-black/5 text-secondary hover:text-primary"
+                          }`}
                           title="Speak visual description"
                         >
                           <Volume2 className="w-3.5 h-3.5" />
@@ -553,22 +670,22 @@ export default function NanaBananaStudio({
       {/* Full-size Image Preview Modal */}
       {previewVisual && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-white/20">
-            <div className="p-4 border-b border-black/[0.08] flex items-center justify-between bg-surface-0">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-white/20">
+            <div className="p-4 border-b border-black/[0.08] dark:border-slate-800 flex items-center justify-between bg-surface-0 dark:bg-slate-900">
               <div>
-                <h4 className="text-sm font-bold text-teal-dark">{previewVisual.title}</h4>
-                <p className="text-[10px] text-secondary max-w-md truncate">{previewVisual.prompt}</p>
+                <h4 className="text-sm font-bold text-teal-dark dark:text-amber-300">{previewVisual.title}</h4>
+                <p className="text-[10px] text-secondary dark:text-slate-400 max-w-md truncate">{previewVisual.prompt}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewVisual(null)}
-                className="p-2 hover:bg-black/5 rounded-full text-secondary hover:text-primary transition-all cursor-pointer"
+                className="p-2 hover:bg-black/5 dark:hover:bg-slate-800 rounded-full text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-white transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-900/95">
+            <div className="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-950">
               <img 
                 src={previewVisual.imageUrl} 
                 alt={previewVisual.title}
@@ -577,15 +694,15 @@ export default function NanaBananaStudio({
               />
             </div>
 
-            <div className="p-4 border-t border-black/[0.08] bg-surface-0 flex items-center justify-between">
-              <span className="text-xs text-secondary font-mono">
-                Model: Nana Banana Pro (gemini-3-pro-image)
+            <div className="p-4 border-t border-black/[0.08] dark:border-slate-800 bg-surface-0 dark:bg-slate-900 flex items-center justify-between">
+              <span className="text-xs text-secondary dark:text-slate-400 font-mono">
+                Model: Visual Studio (gemini-3-pro-image)
               </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => handleDownloadImage(previewVisual)}
-                  className="px-4 py-2 bg-teal-dark hover:bg-teal-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-amber-950 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download High-Res PNG</span>
@@ -599,3 +716,4 @@ export default function NanaBananaStudio({
     </div>
   );
 }
+

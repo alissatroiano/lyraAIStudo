@@ -1776,7 +1776,7 @@ export default function App() {
                   { id: "slides", label: "Interactive Slides", icon: Layers },
                   { id: "lab", label: "Hands-On Lab", icon: Flame },
                   { id: "quiz", label: "Smartboard Quiz", icon: HelpCircle },
-                  { id: "gamify", label: "Nana Banana Pro Studio", icon: Sparkles }
+                  { id: "gamify", label: "Visual Studio", icon: Sparkles }
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const isSelected = activeTab === tab.id;
